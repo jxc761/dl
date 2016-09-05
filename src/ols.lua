@@ -1,12 +1,16 @@
-local torch = require 'torch'
-local utils = require 'utils'
+require 'torch'
+require 'paths'
+
+-- local torch = require 'torch'
+-- local utils = require 'utils'
 
 local function DataDir()
-  local osname = utils.getOS()
+  local osname = paths.uname()
   
   local datadir = {
-    Mac   = '/Users/Jing/Dropbox/dev/benchmarks/buffer/cache',
-    Linux = '/Home/jxc761/benchmarks/buffer/cache'}
+    Darwin = '/Users/Jing/Dropbox/dev/benchmarks/buffer/cache',
+    Linux  = '/Home/jxc761/benchmarks/buffer/cache'
+  }
    
   return datadir[osname]
   

@@ -14,12 +14,13 @@ echo "STATEMENT=${STATEMENT}"
 #
 
 # change working directory to src
-project_dir='/home/jxc761/depth'
-src_dir='${project_dir}/src'
+project_dir="/home/jxc761/depth"
+src_dir="${project_dir}/src"
 cd "${src_dir}" 
 
 # Load troch7 module
 module load torch
+module load gnuplot
 
 # run torch
 th ${STATEMENT} 

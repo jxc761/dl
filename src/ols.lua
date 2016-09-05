@@ -9,7 +9,7 @@ local function DataDir()
   
   local datadir = {
     Darwin = '/Users/Jing/Dropbox/dev/benchmarks/buffer/cache',
-    Linux  = '/Home/jxc761/benchmarks/buffer/cache'
+    Linux  = '/home/jxc761/benchmarks/buffer/cache'
   }
    
   return datadir[osname]

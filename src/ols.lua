@@ -4,7 +4,7 @@ require 'paths'
 -- local torch = require 'torch'
 -- local utils = require 'utils'
 
-local function DataDir()
+local function CacheDir()
   local osname = paths.uname()
   
   local datadir = {
@@ -15,6 +15,19 @@ local function DataDir()
   return datadir[osname]
   
 end
+
+local function DatasetFilename(dtype, ctype, res)
+  
+  local key = string.format('%s_%s_%dx%d',dtype, ctype, res, res)
+  
+  
+  local cachedir = CacheDir()
+  local filename = string.format('%s/%s.cache', cachedir, key)
+  
+  return filename
+  
+end
+
 
 local function DatasetSize(dtype, ctype, res)
 
@@ -48,12 +61,10 @@ end
 -- Output:
 -- data  : a tensor
 ----------
-local function LoadDataSet (dtype, ctype, res)
-  local key = string.format('%s_%s_%dx%d',dtype, ctype, res, res)
+local function LoadDataset (dtype, ctype, res)
   
   -- filename 
-  local datadir = DataDir()
-  local filename = string.format('%s/%s.cache', datadir, key)
+  local filename = DatasetFilename(dtype, ctype, res)
   
   -- size  
   local sz = DatasetSize(dtype, ctype, res)
@@ -71,16 +82,19 @@ local function LoadDataSet (dtype, ctype, res)
   local file = torch.DiskFile(filename, 'r')
   file:binary()
   local storage = file:readFloat(n)
-  local data = torch.FloatTensor(storage, 1, torch.LongStorage(sz))
   file:close()
+  
+  -- resize the data 
+  local data = torch.FloatTensor(storage, 1, torch.LongStorage(sz))
   
   return data
 end
 
 local ols = {
-  DataDir  = DataDir,
+  CacheDir  = CacheDir,
   DatasetSize = DatasetSize,
-  LoadDataSet = LoadDataSet
+  DatasetFilename = DatasetFilename,
+  LoadDataset = LoadDataset
 }
  
 

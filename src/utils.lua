@@ -1,7 +1,8 @@
 require 'paths'
+require 'os'
+
 
 local utils = {}
-
 
 
 function utils.project_dir()

@@ -154,6 +154,7 @@ function naive.run(p)
       evals[#evals+1] = l
       
       file_evals:write( string.format('%16d%16.2f%16.4e\r\n', epoch, duration, l) )
+      file_evals:flush()
       
       -- plot the evaluate result
       if os == 'Darwin' then
@@ -184,8 +185,9 @@ function naive.run(p)
   
   
   -- save model
-  torch.save(fn_model, {md=md, criterion=criterion}, 'binary')
-  
+  if fn_model ~= nil then
+      torch.save(fn_model, {md=md, criterion=criterion}, 'binary')
+  end
  
 end
 

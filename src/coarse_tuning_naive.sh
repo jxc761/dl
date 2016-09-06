@@ -3,7 +3,7 @@
 #   test_navie.sh 
 #   test_navie.sh idx
 #   test_navie.sh first last
-  
+
 set -o nounset
 set -o errexit
 
@@ -25,6 +25,8 @@ echo "FIRST=$FIRST"
 echo "LAST=$LAST"
 script_dir="${HOME}/depth/script"
 for i in $(seq $FIRST $LAST); do 
-	${script_dir}/run.sh "naive_learning_rate$i" "test_naive.lua $i" 
+	${script_dir}/run.sh "naive_gray_inverse_coarse_learningrate$i" "test_naive.lua coarse_tuning $i" 
 done
+
+
 

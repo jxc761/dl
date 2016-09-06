@@ -5,7 +5,7 @@
 set -o nounset
 set -o errexit
 
-if [ $# -ne 2 ]; then 
+if [ $# -gt 3 ]; then 
 	echo "wrong number of arguments"
 	exit
 fi
@@ -21,7 +21,7 @@ echo "n=${n}"
 
 script_dir="${HOME}/depth/script"
 for i in $(seq 1 $n); do 
-	${script_dir}/run.sh "naive_gray_inverse_fine_learningrate$i" "test_naive.lua fine_tuning ${min} ${max} ${n} $i" 
+	${script_dir}/run.sh "naive_gray_inverse_fine_learningrate$i" "test_naive.lua fine_tuning ${min} ${max} ${n} $i" "gpu" 
 done
 
 

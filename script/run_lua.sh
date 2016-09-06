@@ -21,10 +21,14 @@ cd "${src_dir}"
 # Load troch7 module
 module load torch
 module load gnuplot
+module load cuda/7.0.28
 
 # run torch
 th ${STATEMENT} 
 
+module unload torch
+module unload gunplot
+module unload cuda
 
 STOP_TIME=$(date +'%s')
 echo "DONE: $(date +'%D %T')"

@@ -25,15 +25,18 @@ MEMORY=${4:-small} # large | small
 PROJECT_DIR="/home/jxc761/depth"
 SCRIPT_DIR="${PROJECT_DIR}/script"
 LOG_DIR="${PROJECT_DIR}/log"
-FN_OUT="${LOG_DIR}/${JOB_NAME}.out";
+FN_OUT="${LOG_DIR}/${JOB_NAME}.out"
+FN_ERR="${LOG_DIR}/${JOB_NAME}.err"
+
 test -d "${LOG_DIR}" || mkdir -p "${LOG_DIR}"
 
 
 [[ ${MEMORY} == small ]] &&  mem="--mem=20g" || mem="-mem=40g"
-[[ ${MODE} == cpu ]]     &&  partition="--partition=batch" || partition="-p gpufermi --gres=gpu:1"
+[[ ${MODE} == cpu ]]     &&  partition="--partition=batch" || partition="--partition=gpufermi"
+[[ ${MODE} == cpu ]]     &&  gres="" || gres="--gres=gpu:1"
 
-sbatch --job-name="${JOB_NAME}"  --output="${FN_OUT}" \
-	 --nodes=1 --cpus-per-task=12 "${mem}" "${partition}"   \
+sbatch --job-name="${JOB_NAME}"  --output="${FN_OUT}" --error="${FN_ERR}"\
+	 --nodes=1 --cpus-per-task=12 "${mem}" "${partition}"  "${gres}" \
 	 --export=STATEMENT="${STATEMENT}" \
      "${SCRIPT_DIR}/run_lua.sh"						
 

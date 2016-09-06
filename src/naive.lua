@@ -30,7 +30,7 @@ local function save_params(filename, p)
   file:write(string.format('%16s=%s\r\n', 'target.ctype', p.target.ctype) )
   file:write(string.format('%16s=%d\r\n', 'target.res', p.target.res))
   
-  file:write(string.format('%16s=%d\r\n', 'use_gpu', p.usegpu))
+  file:write(string.format('%16s=%s\r\n', 'use_gpu', p.usegpu))
   
   file:write(string.format('%16s=%d\r\n', 'nTrain', p.nTrain))
   file:write(string.format('%16s=%d\r\n', 'nTest', p.nTest))
@@ -40,9 +40,18 @@ local function save_params(filename, p)
 
   file:write(string.format('%16s=%s\r\n', 'fn_evals_txt', p.fn_evals_txt))
   file:write(string.format('%16s=%s\r\n', 'fn_evals_svg', p.fn_evals_svg))
-  file:write(string.format('%16s=%s\r\n', 'fn_performance', p.fn_performance))
-  file:write(string.format('%16s=%s\r\n', 'fn_model', p.fn_model))
-  file:write(string.format('%16s=%s\r\n', 'fn_params', p.fn_parameters))
+  
+  if p.fn_perfromance then
+    file:write(string.format('%16s=%s\r\n', 'fn_performance', p.fn_performance))
+  end
+
+  if p.fn_model then 
+     file:write(string.format('%16s=%s\r\n', 'fn_model', p.fn_model))
+ end
+
+  if p.fn_parameters then
+    file:write(string.format('%16s=%s\r\n', 'fn_params', p.fn_parameters))
+  end
   
   file:close()
 end
@@ -86,7 +95,12 @@ function naive.run(p)
   local Y = ols.LoadDataset(target.dtype, target.ctype, target.res)
   X = X:view(-1, input.res*input.res)
   Y = Y:view(-1, target.res*target.res)
-  
+ 
+  if usegpu then
+    X = X:cuda()
+    Y = Y:cuda()
+  end
+
   local trainX = X:narrow(1, 1, nTrain)
   local trainY = Y:narrow(1, 1, nTrain)
   local validX = X:narrow(1, nTrain+1, nValid)
@@ -107,16 +121,9 @@ function naive.run(p)
   local criterion = nn.MSECriterion()
   
   -- gpu support
-  if usegpu==1 then
+  if usegpu then
     md:cuda()
     criterion:cuda()
-    
-    trainX:cuda()
-    trainY:cuda()
-    validX:cuda()
-    validY:cuda()
-    testX:cuda()
-    testY:cuda()
   end
   
  
@@ -134,12 +141,20 @@ function naive.run(p)
   
   -- evaluate setting
   local evals = {}
+  local validO = torch.Tensor(validY:size())
+  
+  if usegpu==1 then
+    validO:cuda()
+  end
+
+  local validl = 0
   local fun_evaluate = function (cur_epoch, cur_duration)
       -- evaluate on the validation dataset
-      local l = criterion:forward( md:forward(validX), validY)
-      evals[#evals+1] = l
+      validO = md:forward(validX)
+      validl = criterion:forward(validO, validY)
+      evals[#evals+1] = validl
       
-      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', cur_epoch, cur_duration, l) )
+      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', cur_epoch, cur_duration, validl) )
       file_evals:flush()
       
       -- plot the evaluate result
@@ -162,7 +177,7 @@ function naive.run(p)
   
   
   sys.tic() -- start timer
-  fun_evaluate(0, 0)
+  -- fun_evaluate(0, 0)
   local params, gradParams = md:getParameters()  -- flatten model parameters
   for epoch = 1, p.nIter do
   
@@ -207,7 +222,21 @@ function naive.run(p)
     local used_time = sys.toc()
     local performance = {}
     performance.test  = criterion:forward(md:forward(testX), testY)
-    performance.train = criterion:forward(md:forward(trainX), trainY)
+    if usegpu then
+        local step=1000
+        local sum = 0
+        local n = trainX:size(1)
+        for index = 1, n, step do
+            local size = step < (n-index+1) and step or (n-index+1) 
+            local x = trainX:narrow(1, index, size)
+            local y = trainY:narrow(1, index, size)
+            local l = criterion:forward(md:forward(x), y)
+            sum = sum + l * size
+        end
+        performance.train= sum / n;
+    else
+        performance.train = criterion:forward(md:forward(trainX), trainY)
+    end
     performance.valid = criterion:forward(md:forward(validX), validY)
   
     -- save out peformance 

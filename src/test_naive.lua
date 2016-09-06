@@ -17,9 +17,10 @@ torch.manualSeed(0)
 
 local function test_using_gpu(varargs)
 
-    local usegpu=tonumber(varargs[1])
+    local usegpu=tonumber(varargs[1]) ~= 0
     local project_dir=utils.project_dir()
-    local output = string.format('%s/buffer/naive_gray_inverse_gpu/usegpu_%d', project_dir, usegpu)
+    local output = string.format('%s/buffer/naive_gray_inverse_gpu/usegpu_%s', project_dir, usegpu)
+
     paths.mkdir(output)
     
     local param = {      
@@ -80,7 +81,7 @@ local function coarse_tuning_learningrate(varargs)
     -- local varargs = {...}
     local idx = tonumber(varargs[1])
     local learningRates = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6}
-    test_learning_rate(idx)
+    test_learning_rate(learningRates[idx])
 
 end
 

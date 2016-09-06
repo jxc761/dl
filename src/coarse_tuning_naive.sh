@@ -25,7 +25,7 @@ echo "FIRST=$FIRST"
 echo "LAST=$LAST"
 script_dir="${HOME}/depth/script"
 for i in $(seq $FIRST $LAST); do 
-	${script_dir}/run.sh "naive_gray_inverse_coarse_learningrate$i" "test_naive.lua coarse_tuning $i" 
+	${script_dir}/run.sh "naive_gray_inverse_coarse_learningrate$i" "test_naive.lua coarse_tuning $i" "gpu" 
 done
 
 

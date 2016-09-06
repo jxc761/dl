@@ -81,6 +81,7 @@ local function coarse_tuning_learningrate(varargs)
     -- local varargs = {...}
     local idx = tonumber(varargs[1])
     local learningRates = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6}
+    print(string.format('idx=%d, learningRate=%f\r\n',idx, learningRates[idx])
     test_learning_rate(learningRates[idx])
 
 end
@@ -91,11 +92,12 @@ local function fine_tuning_learningrate(varargs)
     local minLR = tonumber(varargs[1])
     local maxLR = tonumber(varargs[2])
     local n = tonumber(varargs[3])
-    local i = tonumber(varargs[4])
+    local idx = tonumber(varargs[4])
 
-    print(string.format('minLR= %.4e, maxLR=%.4e, n=%d, i=%d\r\n', minLR, maxLR, n, i) )
+    print(string.format('minLR= %.4e, maxLR=%.4e, n=%d, i=%d\r\n', minLR, maxLR, n, idx) )
     local fineLearningRates = torch.logspace(math.log10(minLR), math.log10(maxLR), n)
-
+    
+    print(string.format('idx=%d, learningRate=%f\r\n',idx, fineLearningRates[idx])
     test_learning_rate(fineLearningRates[i])
 
 end

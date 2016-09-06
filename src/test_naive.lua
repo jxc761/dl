@@ -15,6 +15,36 @@ local utils = require 'utils'
 
 torch.manualSeed(0)
 
+local function test_using_gpu(varargs)
+
+    local usegpu=tonumber(varargs[1])
+    local project_dir=utils.project_dir()
+    local output = string.format('%s/buffer/naive_gray_inverse_gpu/usegpu_%d', project_dir, usegpu)
+    paths.mkdir(output)
+    
+    local param = {      
+      input  = {dtype = 'image',  ctype='gray', res=16}, 
+      target = {dtype= 'depth', ctype='inverse', res=16},
+      nTrain = 400 * 40 * 30,
+      nValid = 50 * 40 * 30,
+      nTest  = 50 * 40 * 30,
+      batchsz = 128,
+      learningRate = 0.07,
+      evalPeriod = 100,
+      nIter = 10000,
+      usegpu=usegpu,
+      fn_evals_txt   = string.format('%s/evals.txt', output),
+      fn_evals_svg   = string.format('%s/errs_vs_epoch.svg', output),
+      fn_performance = string.format('%s/performance.txt', output),
+      fn_model       = nil, --string.format('%s/model.dat', output),
+      fn_parameters  = string.format('%s/parameters.txt', output)
+    } 
+    
+    naive.run(param)
+     
+end
+
+
 
 local function test_learning_rate(learningRate)
 
@@ -33,6 +63,7 @@ local function test_learning_rate(learningRate)
       learningRate = learningRate,
       evalPeriod = 100,
       nIter = 10000,
+      usegpu=false,
       fn_evals_txt   = string.format('%s/evals.txt', output),
       fn_evals_svg   = string.format('%s/errs_vs_epoch.svg', output),
       fn_performance = string.format('%s/performance.txt', output),
@@ -73,6 +104,7 @@ local task= table.remove(arg, 1)
 local funcs = {
     fine_tuning = fine_tuning_learningrate,
     coarse_tuning = coarse_tuning_learningrate,
+    test_gpu = test_using_gpu
 }
 funcs[task](arg)
 

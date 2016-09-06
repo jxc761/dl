@@ -6,6 +6,12 @@ require 'gnuplot'
 require 'paths'
 require 'sys'
 
+-- gup support
+require 'cunn'
+require 'cutorch'
+
+
+
 local ols = require 'ols'
 
 
@@ -23,6 +29,8 @@ local function save_params(filename, p)
   file:write(string.format('%16s=%s\r\n', 'target.dtype', p.target.dtype) )
   file:write(string.format('%16s=%s\r\n', 'target.ctype', p.target.ctype) )
   file:write(string.format('%16s=%d\r\n', 'target.res', p.target.res))
+  
+  file:write(string.format('%16s=%d\r\n', 'use_gpu', p.usegpu))
   
   file:write(string.format('%16s=%d\r\n', 'nTrain', p.nTrain))
   file:write(string.format('%16s=%d\r\n', 'nTest', p.nTest))
@@ -51,6 +59,7 @@ function naive.run(p)
   local nValid = p.nValid
   local batchsz = p.batchsz
   
+  local usegpu = p.usegpu
   local learningRate = p.learningRate
   
   local fn_evals_txt = p.fn_evals_txt
@@ -97,7 +106,18 @@ function naive.run(p)
   end
   local criterion = nn.MSECriterion()
   
-  
+  -- gpu support
+  if usegpu==1 then
+    md:cuda()
+    criterion:cuda()
+    
+    trainX:cuda()
+    trainY:cuda()
+    validX:cuda()
+    validY:cuda()
+    testX:cuda()
+    testY:cuda()
+  end
   
  
   -- for debug
@@ -108,19 +128,45 @@ function naive.run(p)
   -- print(testX:size())
   -- print(testY:size())
   
-  -- open log file
+  -- open log file for recording resulting during evaluation
   local file_evals = assert( io.open(fn_evals_txt, 'w'))
   file_evals:write(string.format('%16s%16s%16s\r\n', '#epoch', 'time(s)', 'fval') )
   
-  
-  -- train model
+  -- evaluate setting
   local evals = {}
+  local fun_evaluate = function (cur_epoch, cur_duration)
+      -- evaluate on the validation dataset
+      local l = criterion:forward( md:forward(validX), validY)
+      evals[#evals+1] = l
+      
+      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', cur_epoch, cur_duration, l) )
+      file_evals:flush()
+      
+      -- plot the evaluate result
+      if os == 'Darwin' then
+        gnuplot.setgnuplotexe('/usr/local/bin/gnuplot')
+      end
+        
+      gnuplot.setterm('svg')
+      gnuplot.svgfigure(fn_evals_svg)
+      gnuplot.plot(torch.Tensor(evals))
+      gnuplot.plotflush() 
+  end    
+  
+
+  
   local nBatchs = math.floor(trainX:size(1) / batchsz)
   local config = {learningRate = learningRate}
-  sys.tic() -- start timer
   
+  
+  
+  
+  sys.tic() -- start timer
+  fun_evaluate(0, 0)
   local params, gradParams = md:getParameters()  -- flatten model parameters
   for epoch = 1, p.nIter do
+  
+  
     -- external variables: gradParams, md, criterion, trainX, trainY, p
     -- input : b:batch_index
     -- output: loss(batch), dl/dparams 
@@ -144,27 +190,11 @@ function naive.run(p)
   
     
     optim.sgd(feval, params, config)
-    
+   
     -- evaluate 
     if epoch % p.evalPeriod == 0 then
-      local duration = sys.toc()
-      -- evaluate on the testing dataset
-      local o = md:forward(validX)
-      local l = criterion:forward(o, validY)
-      evals[#evals+1] = l
-      
-      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', epoch, duration, l) )
-      file_evals:flush()
-      
-      -- plot the evaluate result
-      if os == 'Darwin' then
-        gnuplot.setgnuplotexe('/usr/local/bin/gnuplot')
-      end
-        
-      gnuplot.setterm('svg')
-      gnuplot.svgfigure(fn_evals_svg)
-      gnuplot.plot(torch.Tensor(evals))
-      gnuplot.plotflush() 
+        local duration = sys.toc()
+        fun_evaluate(epoch, duration)
     end
     
   end
@@ -173,15 +203,18 @@ function naive.run(p)
   
   
   -- evaluate peformance
-  local performance = {}
-  performance.test  = criterion:forward(md:forward(testX), testY)
-  performance.train = criterion:forward(md:forward(trainX), trainY)
-  performance.valid = criterion:forward(md:forward(validX), validY)
+  if  fn_performance ~= nil then
+    local used_time = sys.toc()
+    local performance = {}
+    performance.test  = criterion:forward(md:forward(testX), testY)
+    performance.train = criterion:forward(md:forward(trainX), trainY)
+    performance.valid = criterion:forward(md:forward(validX), validY)
   
-  -- save out peformance 
-  local file_performance = assert( io.open(fn_performance, 'w'))
-  file_performance:write( string.format('%16.4e%16.4e%16.4e\r\n', performance.train, performance.valid, performance.test) )
-  file_performance:close()
+    -- save out peformance 
+    local file_performance = assert( io.open(fn_performance, 'w'))
+    file_performance:write( string.format('%16.4f%16.4e%16.4e%16.4e\r\n', used_time, performance.train, performance.valid, performance.test) )
+    file_performance:close()
+  end
   
   
   -- save model

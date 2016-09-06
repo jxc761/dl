@@ -1,6 +1,12 @@
 require 'gnuplot'
 require 'paths'
 
+
+print(arg)
+
+cmd = torch.CmdLine()
+
+
 local ols = require 'ols'
 print(ols.DataDir())
 

@@ -11,6 +11,34 @@ local ols = require 'ols'
 
 local naive = {}
 
+
+local function save_params(filename, p)
+
+  local file = assert( io.open(filename, 'w'))
+  
+  file:write(string.format('%16s=%s\r\n', 'input.dtype', p.input.dtype) )
+  file:write(string.format('%16s=%s\r\n', 'input.ctype', p.input.ctype) )
+  file:write(string.format('%16s=%d\r\n', 'input.res', p.input.res))
+
+  file:write(string.format('%16s=%s\r\n', 'target.dtype', p.target.dtype) )
+  file:write(string.format('%16s=%s\r\n', 'target.ctype', p.target.ctype) )
+  file:write(string.format('%16s=%d\r\n', 'target.res', p.target.res))
+  
+  file:write(string.format('%16s=%d\r\n', 'nTrain', p.nTrain))
+  file:write(string.format('%16s=%d\r\n', 'nTest', p.nTest))
+  file:write(string.format('%16s=%d\r\n', 'nValid', p.nValid))
+  file:write(string.format('%16s=%d\r\n', 'batchsz', p.batchsz))
+  file:write(string.format('%16s=%e\r\n', 'learningRate', p.learningRate))
+
+  file:write(string.format('%16s=%s\r\n', 'fn_evals_txt', p.fn_evals_txt))
+  file:write(string.format('%16s=%s\r\n', 'fn_evals_svg', p.fn_evals_svg))
+  file:write(string.format('%16s=%s\r\n', 'fn_performance', p.fn_performance))
+  file:write(string.format('%16s=%s\r\n', 'fn_model', p.fn_model))
+  file:write(string.format('%16s=%s\r\n', 'fn_params', p.fn_parameters))
+  
+  file:close()
+end
+
 function naive.run(p)
   torch.setdefaulttensortype('torch.FloatTensor')
 
@@ -32,7 +60,7 @@ function naive.run(p)
   local fn_params = p.fn_parameters
   
   -- save parameters
-  torch.save(fn_params, p, 'ascii')
+  save_params(fn_params, p)
   
   
   local os = paths.uname()
@@ -159,25 +187,6 @@ function naive.run(p)
   torch.save(fn_model, {md=md, criterion=criterion}, 'binary')
   
  
-end
-
-
-local function print_parameters(p, filename)
-
-torch.save(filename, p, '')
---local file = assert( io.open(filename, 'w'))
---file:write(string.format('%16s:%d' , 'res', p.res))
---file:write(string.format('%16s:%d', 'nTrain', p.nTrain))
---file:write(string.format('%16s:%d', 'nTest', p.nTest))
---file:write(string.format('%16s:%d', 'nValid', p.nValid))
---file:write(string.format('%16s:%d', 'batchsz', p.batchsz))
---file:write(string.format('%16s:%e', 'learningRate', p.learningRate))
---file:write(string.format('%16s:%s', 'fn_evals_txt', p.fn_evals_txt))
---file:write(string.format('%16s:%s', 'fn_evals_svg', p.fn_evals_svg))
---file:write(string.format('%16s:%s', 'fn_performance', p.fn_performance))
---file:write(string.format('%16s:%s', 'fn_model', p.fn_model))
---file:write(string.format('%16s:%s', 'fn_params', p.fn_params))
---file:close()
 end
 
 

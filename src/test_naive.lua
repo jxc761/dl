@@ -64,7 +64,7 @@ local function test_learning_rate(learningRate)
       learningRate = learningRate,
       evalPeriod = 100,
       nIter = 10000,
-      usegpu=false,
+      usegpu=true,
       fn_evals_txt   = string.format('%s/evals.txt', output),
       fn_evals_svg   = string.format('%s/errs_vs_epoch.svg', output),
       fn_performance = string.format('%s/performance.txt', output),
@@ -81,7 +81,7 @@ local function coarse_tuning_learningrate(varargs)
     -- local varargs = {...}
     local idx = tonumber(varargs[1])
     local learningRates = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6}
-    print(string.format('idx=%d, learningRate=%f\r\n',idx, learningRates[idx])
+    print(string.format('idx=%d, learningRate=%f\r\n',idx, learningRates[idx]))
     test_learning_rate(learningRates[idx])
 
 end
@@ -97,8 +97,8 @@ local function fine_tuning_learningrate(varargs)
     print(string.format('minLR= %.4e, maxLR=%.4e, n=%d, i=%d\r\n', minLR, maxLR, n, idx) )
     local fineLearningRates = torch.logspace(math.log10(minLR), math.log10(maxLR), n)
     
-    print(string.format('idx=%d, learningRate=%f\r\n',idx, fineLearningRates[idx])
-    test_learning_rate(fineLearningRates[i])
+    print(string.format('idx=%d, learningRate=%f\r\n',idx, fineLearningRates[idx]))
+    test_learning_rate(fineLearningRates[idx])
 
 end
 

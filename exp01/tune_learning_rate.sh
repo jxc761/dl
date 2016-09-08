@@ -18,10 +18,10 @@ if [ $# -gt 4 ]; then
 fi
 
 # parse arguments
-min=${1:1e-6}
-max=${2:1e-1}
+min=${1:-1e-6}
+max=${2:-1e-1}
 n=${3:-6}
-method=${4:log}
+method=${4:-log}
 
 
 echo "min=${min}"
@@ -31,7 +31,7 @@ echo "method=${method}"
 
 
 script_dir="${HOME}/depth/script"
-jobname="tuning_learning_rate_$min_$max_$n_$method"
+jobname="tuning_learning_rate_${min}_${max}_${n}_${method}"
 
 ${script_dir}/run.sh "${jobname}" "exp01" "tune_learning_rate.lua $min $max $n $method" "gpu" 
 

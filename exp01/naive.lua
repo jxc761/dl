@@ -64,6 +64,7 @@ local function save_params(filename, p)
   
 end
 
+
 function naive.run(p)
   torch.manualSeed(0)
   torch.setdefaulttensortype('torch.FloatTensor')
@@ -170,23 +171,41 @@ function naive.run(p)
       -- plot the evaluate result
       if os == 'Darwin' then
         gnuplot.setgnuplotexe('/usr/local/bin/gnuplot')
+        gnuplot.setterm('svg')
       end
   
-      gnuplot.setterm('svg')
       gnuplot.svgfigure(fn_evals_svg)
       gnuplot.plot(torch.Tensor(evals))
       gnuplot.plotflush() 
     end
   end    
   
+  local forward = function(dataX, dataY)
+    local result
+    if usegpu then
+      local step=1000
+      local sum = 0
+      local n = dataX:size(1)
+      for index = 1, n, step do
+        local size = step < (n-index+1) and step or (n-index+1) 
+        local x = dataX:narrow(1, index, size)
+        local y = dataY:narrow(1, index, size)
+        local l = criterion:forward(md:forward(x), y)
+        sum = sum + l * size
+      end
+        result = sum / n;
+    else
+      result = criterion:forward(md:forward(dataX), dataY)
+    end
+
+    return result
+  end
 
   local nBatchs = math.floor(trainX:size(1) / batchsz)
   local config = {learningRate = learningRate}
   
   
   local params, gradParams = md:getParameters()  -- flatten model parameters
-  params:normal() -- init prams
-
   sys.tic() -- start timer
   for epoch = 1, p.nIter do
   
@@ -215,7 +234,7 @@ function naive.run(p)
     -- evaluate on the validation dataset
     if epoch % p.evalPeriod == 0 then
       local duration = sys.toc()      
-      local validl = criterion:forward(md:forward(validX), validY)
+      local validl = forward(validX, validY) 
       frecordevals(epoch, duration, validl)
     end
     
@@ -230,8 +249,10 @@ function naive.run(p)
   local perform = {}
   perform.duration = sys.toc()
   
-  perform.valid = criterion:forward(md:forward(validX), validY)
-  perform.test  = criterion:forward(md:forward(testX), testY)
+  perform.valid = forward(validX, validY) --criterion:forward(md:forward(validX), validY)
+  perform.test  = forward(testX, testY) --criterion:forward(md:forward(testX), testY)
+  perform.train = forward(trainX, trainY)
+  --[[
   if usegpu then
     local step=1000
     local sum = 0
@@ -247,7 +268,7 @@ function naive.run(p)
   else
       perform.train = criterion:forward(md:forward(trainX), trainY)
   end
-  
+  --]]
     
   -- save out peformance 
   if  fn_performance then

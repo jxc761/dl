@@ -20,9 +20,7 @@ set -o errexit
 
 PROJECT_DIR="/home/jxc761/depth"
 SCRIPT_DIR="${PROJECT_DIR}/script"
-LOG_DIR="${PROJECT_DIR}/log"
-FN_OUT="${LOG_DIR}/${JOB_NAME}.out"
-FN_ERR="${LOG_DIR}/${JOB_NAME}.err"
+LOG_DIR="${PROJECT_DIR}/log/$2"
 
 JOB_NAME=$1
 WORK_DIR="${PROJECT_DIR}/$2"
@@ -32,6 +30,8 @@ MEMORY=${5:-small} # large | small
  
 
 
+FN_OUT="${LOG_DIR}/${JOB_NAME}.out"
+FN_ERR="${LOG_DIR}/${JOB_NAME}.err"
 test -d "${LOG_DIR}" || mkdir -p "${LOG_DIR}"
 
 

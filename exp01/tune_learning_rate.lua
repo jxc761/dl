@@ -3,6 +3,7 @@ require 'os'
 require 'paths'
 
 local utils = require 'utils'
+local naive = require 'naive'
 
 local function get_parameter(learningrate, output)
 
@@ -20,7 +21,7 @@ local function get_parameter(learningrate, output)
       usegpu=true,
       
       fn_evals_txt   = string.format('%s/proces_%e.txt', output, learningrate),
-      fn_evals_svg   = string.format('%s/proces_%e.svg', output, learningrate), --string.format('%s/errs_vs_epoch.svg', output),
+      fn_evals_svg   = nil, --string.format('%s/proces_%e.svg', output, learningrate),
       fn_performance = nil, --string.format('%s/performance.txt', output),
       fn_model       = nil, --string.format('%s/model.dat', output),
       fn_parameters  = nil  --string.format('%s/parameters.txt', output)
@@ -30,14 +31,14 @@ local function get_parameter(learningrate, output)
 end
 
 local function save_results(learningrates, results, output)
-  local n = #learningrates
+  local n = learningrates:nElement()
   
   
   -- save the learning rates out
   local fn_learningrates = string.format('%s/learningrates.txt', output)
   local flearningrates = assert( io.open(fn_learningrates, 'w'))
   for i=1,n do
-    flearningrates:write(string.format('%f\r\n', learningrates[i]))
+    flearningrates:write(string.format('%e\r\n', learningrates[i]))
   end
   flearningrates:close()
   
@@ -69,11 +70,11 @@ local function tune_learningrate(min, max, n, method)
     learningrates = torch.linespace(min, max, n)
   end
   
-  local output = string.format('%s/buffer/tune_lr_%f_%f_%d_%s', utils.project_dir(), min, max, n,  method)
+  local output = string.format('%s/buffer/exp01/tune_lr_%f_%f_%d_%s', utils.project_dir(), min, max, n,  method)
   paths.mkdir(output)
   
   local results = {}
-  for idx = 1, #learningrates do
+  for idx = 1, n do
     local param = get_parameter(learningrates[idx], output)
     results[idx] = naive.run(param)
   end
@@ -82,13 +83,14 @@ local function tune_learningrate(min, max, n, method)
   
 end
 
-local varargs = {...}
+local varargs = arg
 
-local min = varargs[1] and tonumber(varargs[1]) or 1e-6
-local max = varargs[2] and tonumber(varargs[2]) or 1e-1
-local n   = varargs[3] and tonumber(varargs[3]) or 6
-local method = varargs[4] and varargs[4] or 'log'
+local min = tonumber(varargs[1])
+local max = tonumber(varargs[2]) 
+local n   = tonumber(varargs[3]) 
+local method =  varargs[4] 
 
+print('-----------------------------')
 print('tuning learning rate......')
 print('min=' .. min)
 print('max=' .. max)
@@ -97,4 +99,4 @@ print('method=' .. method)
 
 tune_learningrate(min, max, n, method)
 
-print('finish')
+print('-----------------------------')

@@ -1,5 +1,7 @@
 require 'torch'
 require 'os'
+require 'paths'
+
 local utils = require 'utils'
 
 local function get_parameter(learningrate, output)
@@ -68,6 +70,7 @@ local function tune_learningrate(min, max, n, method)
   end
   
   local output = string.format('%s/buffer/tune_lr_%f_%f_%d_%s', utils.project_dir(), min, max, n,  method)
+  paths.mkdir(output)
   
   local results = {}
   for idx = 1, #learningrates do

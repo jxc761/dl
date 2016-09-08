@@ -273,7 +273,8 @@ function naive.run(p)
   -- save out peformance 
   if  fn_performance then
     local file_performance = assert( io.open(fn_performance, 'w'))
-    file_performance:write( string.format('%16.4f%16.4e%16.4e%16.4e\r\n', used_time, perform.train, perform.valid, perform.test) )
+    file_performance:write('learning_rate\tduration\ttraining\tvalidation\ttesting\r\n') 
+    file_performance:write( string.format('%e\t%e\t%e\t%e\t%e\r\n', learningRate, perform.duration, perform.train, perform.valid, perform.test) )
     file_performance:close()
   end
   

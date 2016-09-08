@@ -33,7 +33,7 @@ end
 
 local usegpu = tonumber(arg[1]) == 1
 print('-----------------------------')
-print('usegpu=' .. usegpu )
+print(string.format('usegpu=%s', usegpu))
 
 test_using_gpu(usegpu)
 

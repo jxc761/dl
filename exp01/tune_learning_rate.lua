@@ -48,7 +48,7 @@ local function save_results(learningrates, results, output)
   fperform:write('learning_rate\tduration\ttraining\tvalidation\ttesting\r\n') 
   for i=1,n do
     local pi=results[i].perform
-    fperform:write(string.format('%f\t%.2f\t%f\t%f\t%f\r\n', learningrates[i], pi.duration, pi.train, pi.valid, pi.test))
+    fperform:write(string.format('%e\t%e\t%e\t%e\t%e\r\n', learningrates[i], pi.duration, pi.train, pi.valid, pi.test))
   end
   fperform:close()
   

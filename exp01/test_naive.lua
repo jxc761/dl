@@ -110,4 +110,3 @@ local funcs = {
     test_gpu = test_using_gpu
 }
 funcs[task](arg)
-

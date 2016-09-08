@@ -36,10 +36,17 @@ local function save_params(filename, p)
   file:write(string.format('%16s=%d\r\n', 'nTest', p.nTest))
   file:write(string.format('%16s=%d\r\n', 'nValid', p.nValid))
   file:write(string.format('%16s=%d\r\n', 'batchsz', p.batchsz))
+  
+
   file:write(string.format('%16s=%e\r\n', 'learningRate', p.learningRate))
 
-  file:write(string.format('%16s=%s\r\n', 'fn_evals_txt', p.fn_evals_txt))
-  file:write(string.format('%16s=%s\r\n', 'fn_evals_svg', p.fn_evals_svg))
+  if  p.fn_evals_txt then
+    file:write(string.format('%16s=%s\r\n', 'fn_evals_txt', p.fn_evals_txt))
+  end
+  
+  if p.fn_evals_svg then
+    file:write(string.format('%16s=%s\r\n', 'fn_evals_svg', p.fn_evals_svg))
+  end 
   
   if p.fn_perfromance then
     file:write(string.format('%16s=%s\r\n', 'fn_performance', p.fn_performance))
@@ -54,9 +61,11 @@ local function save_params(filename, p)
   end
   
   file:close()
+  
 end
 
 function naive.run(p)
+  torch.manualSeed(0)
   torch.setdefaulttensortype('torch.FloatTensor')
 
   -- unpack parameters
@@ -78,11 +87,12 @@ function naive.run(p)
   local fn_params = p.fn_parameters
   
   -- save parameters
-  save_params(fn_params, p)
-  
+  if fn_params then
+    save_params(fn_params, p)
+  end
   
   local os = paths.uname()
-   
+  
   
   -- load data 
   -- local images = ols.LoadDataset('image',    'gray', res)
@@ -95,12 +105,12 @@ function naive.run(p)
   local Y = ols.LoadDataset(target.dtype, target.ctype, target.res)
   X = X:view(-1, input.res*input.res)
   Y = Y:view(-1, target.res*target.res)
- 
   if usegpu then
     X = X:cuda()
     Y = Y:cuda()
   end
 
+  -- split data to training, validation, testing set
   local trainX = X:narrow(1, 1, nTrain)
   local trainY = Y:narrow(1, 1, nTrain)
   local validX = X:narrow(1, nTrain+1, nValid)
@@ -136,49 +146,48 @@ function naive.run(p)
   -- print(testY:size())
   
   -- open log file for recording resulting during evaluation
-  local file_evals = assert( io.open(fn_evals_txt, 'w'))
-  file_evals:write(string.format('%16s%16s%16s\r\n', '#epoch', 'time(s)', 'fval') )
+  local file_evals=nil
+  if fn_evals_txt then
+    file_evals = assert( io.open(fn_evals_txt, 'w'))
+    file_evals:write(string.format('%16s%16s%16s\r\n', '#epoch', 'time(s)', 'fval') )
+  end
   
   -- evaluate setting
   local evals = {}
-  local validO = torch.Tensor(validY:size())
-  
-  if usegpu==1 then
-    validO:cuda()
-  end
-
-  local validl = 0
-  local fun_evaluate = function (cur_epoch, cur_duration)
-      -- evaluate on the validation dataset
-      validO = md:forward(validX)
-      validl = criterion:forward(validO, validY)
-      evals[#evals+1] = validl
-      
-      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', cur_epoch, cur_duration, validl) )
+  local durations = {}
+  local epochs = {}
+  local frecordevals = function (cur_epoch, cur_duration, cur_loss)
+    evals[#evals+1] = cur_loss
+    durations[#durations+1] = cur_duration
+    epochs[#epochs+1] = cur_epoch
+    
+    if file_evals then
+      file_evals:write( string.format('%16d%16.2f%16.4e\r\n', cur_epoch, cur_duration, cur_loss) )
       file_evals:flush()
-      
+    end
+    
+    if fn_evals_svg then
       -- plot the evaluate result
       if os == 'Darwin' then
         gnuplot.setgnuplotexe('/usr/local/bin/gnuplot')
       end
-        
+  
       gnuplot.setterm('svg')
       gnuplot.svgfigure(fn_evals_svg)
       gnuplot.plot(torch.Tensor(evals))
       gnuplot.plotflush() 
+    end
   end    
   
 
-  
   local nBatchs = math.floor(trainX:size(1) / batchsz)
   local config = {learningRate = learningRate}
   
   
-  
-  
-  sys.tic() -- start timer
-  -- fun_evaluate(0, 0)
   local params, gradParams = md:getParameters()  -- flatten model parameters
+  params:normal() -- init prams
+
+  sys.tic() -- start timer
   for epoch = 1, p.nIter do
   
   
@@ -186,71 +195,73 @@ function naive.run(p)
     -- input : b:batch_index
     -- output: loss(batch), dl/dparams 
     local function feval(arg)
-        
-        gradParams:zero()
-        local b = (epoch-1) % nBatchs 
-        local index = b *batchsz + 1
-        local size = batchsz
-        local x = trainX:narrow(1, index, size) -- input
-        local y = trainY:narrow(1, index, size) -- target
-        
-        local o = md:forward(x)               -- output of the network   
-        local l = criterion:forward(o, y)     -- loss of the model
-        local dl  = criterion:backward(o, y) -- d_loss/d_output
-        md:backward(x, dl)                -- d_loss/d_parameters and d_loss / d_x
-        
-        return l, gradParams
-         
+      gradParams:zero()
+      local b = (epoch-1) % nBatchs 
+      local index = b *batchsz + 1
+      local size = batchsz
+      local x = trainX:narrow(1, index, size) -- input
+      local y = trainY:narrow(1, index, size) -- target
+
+      local o = md:forward(x)               -- output of the network   
+      local l = criterion:forward(o, y)     -- loss of the model
+      local dl  = criterion:backward(o, y) -- d_loss/d_output
+      md:backward(x, dl)                -- d_loss/d_parameters and d_loss / d_x
+      return l, gradParams
     end
   
     
     optim.sgd(feval, params, config)
    
-    -- evaluate 
+    -- evaluate on the validation dataset
     if epoch % p.evalPeriod == 0 then
-        local duration = sys.toc()
-        fun_evaluate(epoch, duration)
+      local duration = sys.toc()      
+      local validl = criterion:forward(md:forward(validX), validY)
+      frecordevals(epoch, duration, validl)
     end
     
   end
   
-  file_evals:close()
+  if file_evals then
+    file_evals:close()
+  end
   
   
   -- evaluate peformance
-  if  fn_performance ~= nil then
-    local used_time = sys.toc()
-    local performance = {}
-    performance.test  = criterion:forward(md:forward(testX), testY)
-    if usegpu then
-        local step=1000
-        local sum = 0
-        local n = trainX:size(1)
-        for index = 1, n, step do
-            local size = step < (n-index+1) and step or (n-index+1) 
-            local x = trainX:narrow(1, index, size)
-            local y = trainY:narrow(1, index, size)
-            local l = criterion:forward(md:forward(x), y)
-            sum = sum + l * size
-        end
-        performance.train= sum / n;
-    else
-        performance.train = criterion:forward(md:forward(trainX), trainY)
-    end
-    performance.valid = criterion:forward(md:forward(validX), validY)
+  local perform = {}
+  perform.duration = sys.toc()
   
-    -- save out peformance 
+  perform.valid = criterion:forward(md:forward(validX), validY)
+  perform.test  = criterion:forward(md:forward(testX), testY)
+  if usegpu then
+    local step=1000
+    local sum = 0
+    local n = trainX:size(1)
+    for index = 1, n, step do
+      local size = step < (n-index+1) and step or (n-index+1) 
+      local x = trainX:narrow(1, index, size)
+      local y = trainY:narrow(1, index, size)
+      local l = criterion:forward(md:forward(x), y)
+      sum = sum + l * size
+    end
+    perform.train= sum / n;
+  else
+      perform.train = criterion:forward(md:forward(trainX), trainY)
+  end
+  
+    
+  -- save out peformance 
+  if  fn_performance then
     local file_performance = assert( io.open(fn_performance, 'w'))
-    file_performance:write( string.format('%16.4f%16.4e%16.4e%16.4e\r\n', used_time, performance.train, performance.valid, performance.test) )
+    file_performance:write( string.format('%16.4f%16.4e%16.4e%16.4e\r\n', used_time, perform.train, perform.valid, perform.test) )
     file_performance:close()
   end
   
-  
   -- save model
   if fn_model ~= nil then
-      torch.save(fn_model, {md=md, criterion=criterion}, 'binary')
+    torch.save(fn_model, {md=md, criterion=criterion}, 'binary')
   end
- 
+  
+  return {md=md, criterion=criterion, perform=perform, process={evals=evals, epochs=epochs, durations=durations}}
 end
 
 

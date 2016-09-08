@@ -1,0 +1,28 @@
+fn_input="/Users/Jing/Dropbox/dev/depth/buffer/exp01/tune_lr_0.000001_0.100000_6_log/performances.txt"
+fn_output="/Users/Jing/Dropbox/dev/depth/buffer/exp01/tune_lr_0.000001_0.100000_6_log/performances.png"
+
+set term png
+set output fn_output
+
+# Line style for grid
+set style line 81 lt 0 lc rgb "#808080" lw 0.5  # grey
+
+# Line style for curves
+set style line 1 lt 1 lc rgb "#A00000" lw 2 pt 7
+set style line 2 lt 1 lc rgb "#00A000" lw 2 pt 9
+set style line 3 lt 1 lc rgb "#5060D0" lw 2 pt 5
+set style line 4 lt 1 lc rgb "#F25900" lw 2 pt 13
+
+
+
+set grid back linestyle 81                       
+
+set xtics mirror format '%.2e'
+set ytics mirror
+set logscale x
+           
+plot fn_input using 1:3 title 'train' with linespoints ls 1, \
+     fn_input using 1:4 title 'valid' with linespoints ls 2, \
+     fn_input using 1:5 title 'test' with linespoints ls 3
+
+set output

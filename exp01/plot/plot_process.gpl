@@ -1,0 +1,24 @@
+#input_dir="/Users/Jing/Dropbox/dev/depth/buffer/exp01/tune_lr_0.005000_0.500000_12_log"
+#fn_output="/Users/Jing/Dropbox/dev/depth/buffer/exp01/tune_lr_0.005000_0.500000_12_log/processes.png"
+
+
+cmd = sprintf("ls -1 %s/process_*.txt", input_dir)
+files = system(cmd)
+
+cmd = sprintf("ls -1  %s/process_*.txt | wc -l", input_dir)
+n=int(system(cmd))
+
+cmd = sprintf("ls -1 %s/process_*.txt | sed 's/.txt$//' | sed 's/.*process_//'", input_dir)
+labels=system(cmd)
+
+print(files)
+print(n)
+print(labels)
+
+
+set term png
+set output fn_output
+plot for[i = 1 : n] word(files, i) using 1:3 title word(labels, i) with lines
+set output
+
+

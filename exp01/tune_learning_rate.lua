@@ -20,8 +20,8 @@ local function get_parameter(learningrate, output)
       nIter = 10000,
       usegpu=true,
       
-      fn_evals_txt   = string.format('%s/proces_%e.txt', output, learningrate),
-      fn_evals_svg   = nil, --string.format('%s/proces_%e.svg', output, learningrate),
+      fn_evals_txt   = string.format('%s/process_%e.txt', output, learningrate),
+      fn_evals_svg   = nil, --string.format('%s/process_%e.svg', output, learningrate),
       fn_performance = nil, --string.format('%s/performance.txt', output),
       fn_model       = nil, --string.format('%s/model.dat', output),
       fn_parameters  = nil  --string.format('%s/parameters.txt', output)

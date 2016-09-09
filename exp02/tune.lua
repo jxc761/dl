@@ -31,7 +31,7 @@ end
 local function update_learning_rate(param, r, output) 
   param.learningRate   = r
   param.fn_evals_txt   = string.format('%s/process_%e.txt', output, r)
-  param.fn_evals_svg   = nil
+  param.fn_evals_img   = nil
   param.fn_performance = nil
   param.fn_model       = nil
   param.parameters     = nil
@@ -53,7 +53,7 @@ local function tune_learningrate(param, output, min, max, n, method)
   
   local results = {}
   for idx = 1, n do
-    local param = update_learning_rate(learningrates[idx], output)
+    local param = update_learning_rate(param, learningrates[idx], output)
     results[idx] = naive2.run(param)
   end
   
@@ -79,7 +79,7 @@ local function test(dataset, struct, nhidden, alpha, min, max, n, method)
       struct = struct,
       dim = 16 * 16,
       nhidden = nhidden,
-      alpha = alpah
+      alpha = alpha,
       
       batchsz = 128,
       evalPeriod = 100,
@@ -100,13 +100,13 @@ max=tonumber(arg[6])
 n=tonumber(arg[7]) 
 method=arg[8]
 
-print('dataset' .. dataset)
-print('struct' .. struct)
-print('nhidden' .. nhidden)
-print('alpha' .. alpha)
-print('min' .. min)
-print('max' .. max)
-print('n' .. n)
-print('method' .. method)
+print('dataset=' .. dataset)
+print('struct=' .. struct)
+print('nhidden=' .. nhidden)
+print('alpha=' .. alpha)
+print('min=' .. min)
+print('max=' .. max)
+print('n=' .. n)
+print('method=' .. method)
 
 test(dataset, struct, nhidden, alpha, min, max, n, method)

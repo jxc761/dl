@@ -7,15 +7,20 @@ local Monitor = torch.class('Monitor')
 
 function Monitor:__init(config)
 
-  self.fn_txt = config.fn_txt
-  self.fn_img = config.fn_img
+  self.fn_txt = config.fn_evals_txt
+  self.fn_img = config.fn_evals_img
   
-  self.ftxt = nil
+  self.ftxt =nil
+  self.evals= {}
+  self.durations={}
+  self.epochs ={}
+  print(self)
+
 end
 
 
 function Monitor:start()
-  
+  print(self)
   self.evals     = {}
   self.durations = {}
   self.epochs    = {} 

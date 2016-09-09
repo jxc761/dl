@@ -3,12 +3,12 @@ require 'torch'
 require 'optim'
 require 'cunn'
 require 'cutorch'
-
+require 'sys'
 require 'Monitor'
+
 local ols = require 'ols'
 
 local naive2={}
-
 
 local function save_params(filename, p)
 
@@ -27,9 +27,9 @@ local function save_params(filename, p)
   file:write(string.format('%16s=%d\r\n', 'nTest', p.nTest))
   file:write(string.format('%16s=%d\r\n', 'nValid', p.nValid))
   
-  file:write(string.format('%16s=%s\r\n', 'struct', p.struct)
-  file:write(string.format('%16s=%d\r\n', 'nhidden', p.nhidden)
-  file:write(string.format('%16s=%f\r\n',  'alpha', p.alpah)
+  file:write(string.format('%16s=%s\r\n', 'struct', p.struct))
+  file:write(string.format('%16s=%d\r\n', 'nhidden', p.nhidden))
+  file:write(string.format('%16s=%f\r\n',  'alpha', p.alpha))
   
   
   file:write(string.format('%16s=%d\r\n', 'batchsz', p.batchsz))
@@ -39,8 +39,8 @@ local function save_params(filename, p)
     file:write(string.format('%16s=%s\r\n', 'fn_evals_txt', p.fn_evals_txt))
   end
   
-  if p.fn_evals_svg then
-    file:write(string.format('%16s=%s\r\n', 'fn_evals_svg', p.fn_evals_svg))
+  if p.fn_evals_img then
+    file:write(string.format('%16s=%s\r\n', 'fn_evals_img', p.fn_evals_img))
   end 
   
   if p.fn_perfromance then
@@ -61,29 +61,32 @@ end
 
 
 local function Dataset(config)
-	
-	local input = config.input
-	local target = config.target
-	local nTrain = config.nTrain
-	local nTest = config.nTest 
-	local nValid = config.nValid
-
-	local X = ols.LoadDataset(input.dtype, input.ctype, input.res)
-	local Y = ols.LoadDataset(target.dtype, target.ctype, target.res)
+  local input = config.input
+  local target = config.target
+  local nTrain = config.nTrain
+  local nTest = config.nTest 
+  local nValid = config.nValid
+  
+  
+  local X = ols.LoadDataset(input.dtype, input.ctype, input.res)
+  local Y = ols.LoadDataset(target.dtype, target.ctype, target.res)
   X = X:view(-1, input.res*input.res)
-	Y = Y:view(-1, target.res*target.res)
+  Y = Y:view(-1, target.res*target.res)
+  X = X:cuda()
+  Y = Y:cuda()
 	
-	X = X:cuda()
-	Y = Y:cuda()
-	
-	local trainX = X:narrow(1, 1, nTrain)
+  local trainX = X:narrow(1, 1, nTrain)
   local trainY = Y:narrow(1, 1, nTrain)
   local validX = X:narrow(1, nTrain+1, nValid)
   local validY = Y:narrow(1, nTrain+1, nValid)  
   local testX  = X:narrow(1, nTrain+nValid+1, nTest)
   local testY  = Y:narrow(1, nTrain+nValid+1, nTest)  
 
-  return  train ={X=trainX, Y= trainY}, valid={X=validX, Y=validY}, test={testX, testY}
+  local train = {X=trainX, Y=trainY}
+  local valid = {X=validX, Y=validY}
+  local test  = {X=testX , Y=testY}
+    
+  return  train, valid, test
   
 
 end
@@ -96,20 +99,20 @@ local function Model(config)
 	local nhidden = config.nhidden
 
 	local sztable1 = {
-		['3'] = {d, d*a, d*a*a, d*a, d}, 
-		['4'] = {d, d*a, d*a*a, d*a*a, d*a, d},
-		['5'] = {d, d*a, d*a*a, d*a*a*a, d*a*a, d*a, d}
+		[3] = {d, d*a, d*a*a, d*a, d}, 
+		[4] = {d, d*a, d*a*a, d*a*a, d*a, d},
+		[5] = {d, d*a, d*a*a, d*a*a*a, d*a*a, d*a, d}
 	}
 
 	local sztable2 = {
-		['3'] = {d, d*a, d*a*a, d*a*a*a, d},
-		['4'] = {d, d*a, d*a*a, d*a*a*a, d},
-		['5'] = {d, d*a, d*a*a, d*a*a*a, d*a*a*a*a, d}
+		[3] = {d, d*a, d*a*a, d*a*a*a, d},
+		[4] = {d, d*a, d*a*a, d*a*a*a, d},
+		[5] = {d, d*a, d*a*a, d*a*a*a, d*a*a*a*a, d}
 	}
 
 	local sztable = { sym=sztable1, inc= sztable2}
 	local sz = sztable[struct][nhidden]
-  
+
   local md = nn.Sequential()
   for i = 1, nhidden+1 do
     md:add(nn.Linear( math.ceil(sz[i]), math.ceil(sz[i+1]) ))
@@ -154,7 +157,7 @@ function naive2.run(p)
     save_params(p.fn_parameters, p)
   end
   
-	local train, valid, test = Datasets(p)
+	local train, valid, test = Dataset(p)
 	local model = Model(p)
 	local monitor = Monitor(p)
 
@@ -165,7 +168,7 @@ function naive2.run(p)
 
 
   local nTrain = train.X:size(1)
-  local shuffle = torch.randperm(nTrain).
+  local shuffle = torch.randperm(nTrain)
 
   sys.tic() -- start timer
   monitor.start()

@@ -16,6 +16,6 @@ base="$(dirname $_script)"
 
 # coarse tune 
 alpha=(1.2 2.4 3.6)
-for a in "${alpha[@]}" do
+for a in "${alpha[@]}"; do
   ${base}/tune.sh 'small' 'sym' 3 $a 1e-4 1e-1 4 'log'
 done

@@ -33,4 +33,4 @@ echo "----------------------------------------------------"
 # main content
 script_dir="${HOME}/depth/script"
 jobname="${dataset}_${struct}_${nhidden}_${alpha}_${min}_${max}_${n}_${method}"
-${script_dir}/run.sh "${jobname}" "exp02" "tnue.lua ${dataset} ${struct} ${nhidden} ${alpha} ${min} ${max} ${n} ${method}" "gpu" 
+${script_dir}/run.sh "${jobname}" "exp02" "tune.lua ${dataset} ${struct} ${nhidden} ${alpha} ${min} ${max} ${n} ${method}" "gpu" 

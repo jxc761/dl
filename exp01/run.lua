@@ -19,7 +19,7 @@ local function run()
       learningRate = 0.14,
       evalPeriod = 100,
       nIter = 100000,
-      usegpu=usegpu,
+      usegpu= true,
       fn_evals_txt   = string.format('%s/process.txt', output),
       fn_evals_svg   = string.format('%s/process.svg', output),
       fn_performance = string.format('%s/performance.txt', output),

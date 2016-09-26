@@ -1,0 +1,53 @@
+<html>
+<head>
+<title>MathJax TeX Test Page</title>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML">
+</script>
+<style>
+.frametitle{
+	font-weight: bold;
+	color:red
+}
+.frame{
+
+	border-top:  2px solid black;
+	width: 764;
+}
+</style>
+</head>
+<body>
+
+
+<div class="frame">
+	<div class="frametitle">Quantitative evaluations</div>
+
+
+	Measurement in origin depth space
+	<ul>
+	<li> Average relative error:  $$\frac{1}{P} \sum_p \frac{| x_p-\tilde{x_p} | }{x_p}$$</li>
+	<li> Root mean squared error: $$\sqrt{\frac{1}{P} \sum_p(x_p-\tilde{x}_p)^2}$$ </li>
+	<li> Percentage of bad matching pixels: $$ \frac{1}{P}\sum_p ( |x_p-\tilde{x}_p | > \delta )$$ </li>
+	<li> Accuracy with threshold($\delta$): $$ \frac{1}{P}\sum_p \left( \max\left( \frac{x_p}{\tilde{x_p}} ,\frac{\tilde{x_p}}{x_p} \right)< \delta \right)$$</li>
+	</ul>
+</div>
+
+<div class="frame">
+	<div class="frametitle">Quantitative evaluations</div>
+
+
+	Apply measurements to log, inv, and origin space respectively 
+	<ul>
+	<li> Root mean squared error: $$\sqrt{\frac{1}{P} \sum_p(x_p-\tilde{x}_p)^2}$$ </li>
+	</ul>
+	
+</div>
+
+
+
+
+</body>
+</html>

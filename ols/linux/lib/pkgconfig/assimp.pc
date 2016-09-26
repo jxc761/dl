@@ -1,0 +1,11 @@
+prefix=/home/jxc761/ols/assimp
+exec_prefix=/home/jxc761/ols/assimp/bin
+libdir=/home/jxc761/ols/assimp/lib
+includedir=/home/jxc761/ols/assimp/include/assimp
+
+Name: Assimp
+Description: Import various well-known 3D model formats in an uniform manner.
+Version: 3.2.0
+Libs: -L${libdir} -lassimp
+Libs.private: -lstdc++ -lz
+Cflags: -I${includedir}

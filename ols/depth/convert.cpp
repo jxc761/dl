@@ -47,6 +47,7 @@ int main(int argc, char** argv){
 	printf("space_out=%s\r\n", spacey);
 	printf("w=%d\r\n", w);
 	printf("h=%d\r\n", h);
+    fflush(stdout);
 
 	int S = 500;
 	int T = 40;
@@ -85,7 +86,7 @@ int main(int argc, char** argv){
 	float* input = new float[n];
 	float* output = new float[n];
 	for (int s=0; s<S; s++){
-		printf("processing scene %d....\r\n", s);
+		printf("processing scene %d....\r\n", s); fflush(stdout);
 
 		// load data
 		count = fread(input, n, sizeof(float), fin);

@@ -33,6 +33,7 @@ int main(int argc, char** argv){
 	printf("pzInput=%s\r\n", pzInput);
 	printf("w=%d\r\n", w);
 	printf("h=%d\r\n", h);
+    fflush(stdout);
 
 	int S = 500;
 	int T = 40;
@@ -55,7 +56,7 @@ int main(int argc, char** argv){
 	float* depth = new float[n];
 
 	for (int i=0;i<S; i++){
-		printf("processing scene %d \r\n", i);
+		printf("processing scene %d \r\n", i); fflush(stdout);
 		for (int j=0; j<T; j++) {
 			for(int k=0; k<F; k++){
 				fread(depth,  sizeof(float), n, fin);

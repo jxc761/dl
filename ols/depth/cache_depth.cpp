@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
 	printf("pzOutput=%s\r\n", pzOutput);
 	printf("w=%d\r\n", w);
 	printf("h=%d\r\n", h);
+    fflush(stdout);
 
 	int offset = 0;
 	int numb   = 500;
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
 	}
 
 	for (int s = 0; s < numb; s++) {
-		printf("processing scene %d......\r\n",  s+offset);
+		printf("processing scene %d......\r\n",  s+offset); fflush(stdout);
 		// process_scene(s+offset);
 		cache_scene(s+offset, w, h, pfile);
 	}

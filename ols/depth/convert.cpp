@@ -89,7 +89,7 @@ int main(int argc, char** argv){
 		printf("processing scene %d....\r\n", s); fflush(stdout);
 
 		// load data
-		count = fread(input, n, sizeof(float), fin);
+		count = fread(input, sizeof(float), n, fin);
 		if (count != n) {
 			printf("reading data error: count=%d, n=%d......", count, n);
 			return -1;
@@ -99,7 +99,7 @@ int main(int argc, char** argv){
 		convert(input, output, n);
 
 		// save data 
-		count = fwrite(output, sizeof(float), n, fout);
+		count = fwrite(output,  sizeof(float), n, fout);
 		if (count != n) {
 			printf("Writting data error: count=%d, n=%d......", count, n);
 			return -1;

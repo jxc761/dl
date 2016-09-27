@@ -24,8 +24,8 @@ int main(int argc, char** argv){
 	char pzOutput[512];
 	int  w=0, h=0;
 
-	sprintf(pzOutput, "%s", argv[1]);
-	sprintf(pzInput, "%s", argv[2]);
+	sprintf(pzInput, "%s", argv[1]);
+	sprintf(pzOutput, "%s", argv[2]);
 	w = atoi(argv[3]);
 	h = atoi(argv[4]);
 

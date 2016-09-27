@@ -27,8 +27,13 @@ M = res*res;
 X = zeros(M, N);  
 
 parfor i = 1 : N
-    // x = ds.loadImage(i); 			% x = H * W * C
-	x = imread(getImageFilename(i))
+    % x = ds.loadImage(i); 			% x = H * W * C
+    if mod(i, 1200) == 1
+        fprintf('%d, ', i)
+    end
+
+    fn = getImageFilename(i);
+    x = imread(fn);
     x = rgb2gray( mat2gray(x, [0, 65535]) ); 	% convert to double and between [0, 1.0]
     x = imresize(x, [res, res], 'bilinear');
     x = x';
@@ -46,10 +51,11 @@ end
 
 
 function fn = getImageFilename(i)
-F=30
-T=40
-S=500
-image_dir='/Users/Jing/Dropbox/dev/benchmarks/data/ols/img_res64x64_sl18_iso300/config_0'
+F=30;
+T=40;
+S=500;
+image_dir='/mnt/projects/CSE_CS_MSL88/object_level_scenes_v1/img_res64x64_sl18_iso300/config_0';
+
 traces = [ '0_0_0_0'; '0_0_1_0'; '0_0_2_0'; '0_0_3_0'; '0_0_4_0'; ...
 	        '0_1_0_0'; '0_1_1_0'; '0_1_2_0'; '0_1_3_0'; '0_1_4_0'; ...
 	        '1_2_0_0'; '1_2_1_0'; '1_2_2_0'; '1_2_3_0'; '1_2_4_0'; ...
@@ -60,6 +66,6 @@ traces = [ '0_0_0_0'; '0_0_1_0'; '0_0_2_0'; '0_0_3_0'; '0_0_4_0'; ...
 	        '3_7_0_0'; '3_7_1_0'; '3_7_2_0'; '3_7_3_0'; '3_7_4_0'; ...
         ];
 [f, t, s] = ind2sub([F, T, S], i);
-fn = sprintf('%s/scene_%d/%s/frame%03d.png', self.image_dir, s-1, traces(t, :), f-1);
+fn = sprintf('%s/scene_%d/%s/frame%03d.png', image_dir, s-1, traces(t, :), f-1);
 
 end

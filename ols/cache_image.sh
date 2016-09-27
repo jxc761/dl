@@ -1,8 +1,11 @@
 #!/bin/bash
-#SBATCH --mem=10g
+#SBATCH --mem=25g
 #SBATCH --cpus-per-task=20
+#SBATCH --job-name=cache_image
 #
-
+# usage: sbatch --export=RES=16 ./cache_image.sh
+#
+#
 set -o nounset
 
 #echo "SLURM_SUBMIT_DIR=${SLURM_SUBMIT_DIR}"
@@ -18,9 +21,11 @@ if [ $(uname) == "Darwin" ]; then
 fi
 echo ${PROJECT_DIR}
 
+echo "RES=${RES}"
+
 DN_CACHE="${PROJECT_DIR}/buffer/cache"
 WORK_DIR="${PROJECT_DIR}/ols/image"
-COMMAND="cache_image('${DN_CACHE}/image_gray_16x16.cache', 16)"
+COMMAND="cache_image('${DN_CACHE}/image_gray_${RES}x${RES}.cache', ${RES})"
 
 cd "${WORK_DIR}"
 

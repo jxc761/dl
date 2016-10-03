@@ -18,7 +18,7 @@ fi
 set -o nounset
 set -o errexit
 
-PROJECT_DIR="/home/jxc761/depth"
+PROJECT_DIR="/home/jxc761/dl"
 SCRIPT_DIR="${PROJECT_DIR}/script"
 LOG_DIR="${PROJECT_DIR}/log/$2"
 

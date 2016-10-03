@@ -95,8 +95,8 @@ end
 
 
 function Model:predict(x)
-  --x = x:cuda()
-	return self.network:forward(x)
+    x = x:cuda()
+	return self.network:forward(x):float()
 end
 
 

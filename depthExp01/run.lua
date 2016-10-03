@@ -9,11 +9,11 @@ local utils=require'utils'
 
 function run(model, data, examples, trainOpts, root_output)
 
-  local fn_perform = string.format('%s/peform.txt', root_output)
+  local fn_perform = string.format('%s/perform.txt', root_output)
   local fn_examples= string.format('%s/examples.dat', root_output)
   
   local fperform = assert( io.open(fn_perform, 'w'))
-  fperform:write(string.format('%s\t%s\t%s\t%s\t%s\r\n', 'opts', 'duration', 'train','valid', 'test')
+  fperform:write(string.format('%s\t%s\t%s\t%s\t%s\r\n', 'opts', 'duration', 'train','valid', 'test'))
 
   examples:save(fn_examples)
   
@@ -26,12 +26,12 @@ function run(model, data, examples, trainOpts, root_output)
     local fn_proc_txt = string.format('%s/process_%d.txt', root_output, i)
     local fn_proc_exp = string.format('%s/process_%d.dat', root_output, i)
     local optMonitor = {
-        period   = math.floor(trainOpts[i].nIter/100), 
-        examples = examples,
+        period   = math.floor(trainOpts[i].nIter/50), 
         fn_proc_txt = fn_proc_txt,
         fn_proc_exp = fn_proc_exp
     }
     local monitor = Monitor(model, data, examples, optMonitor)
+    print(monitor)
 
 
 
@@ -55,9 +55,10 @@ function run(model, data, examples, trainOpts, root_output)
     local fresult   = torch.DiskFile(fn_result, 'w'):binary()
     fresult:writeObject(predSmpY)
     fresult:writeObject(predTrcY)
-
+    fresult:close()
   end
 
-  fpeform:close()
+  fperform:close()
+  
 end
 

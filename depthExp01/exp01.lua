@@ -1,9 +1,12 @@
 require'torch'
 require'build_ds'
 require'build_md'
+require'build_tr'
 require'Examples'
 require'paths'
+require'run'
 
+local utils = require'utils'
 
 
 

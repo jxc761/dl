@@ -1,6 +1,6 @@
 require 'torch'
 
-
+local utils=require'utils'
 
 local function batch_mse_ds(model, data, dataset)
   local N = data:numb(dataset)
@@ -11,7 +11,7 @@ local function batch_mse_ds(model, data, dataset)
   local e=0
 
   for b = 1, B do
-    print('processing ' .. b)
+    --print('processing ' .. b)
     local first =  (b-1)*batchsz+1
     local last  =  b*batchsz > N and N or  b*batchsz 
     local idx = torch.range(first, last):long()
@@ -50,7 +50,7 @@ local function evaluate_on_exps(model, examples)
   end
 
   local predTrcY = utils.concat(1, predY)
-  return predSmpY, predTrcY
+  return predSmpY:float(), predTrcY:float()
 end
 
 function evaluate(model, data, examples)

@@ -1,5 +1,4 @@
-require 'cutorch'
-
+require 'optim'
 function train(model, data, monitor, opt)
 
   local batchsz = opt.batchsz
@@ -15,9 +14,10 @@ function train(model, data, monitor, opt)
   for epoch = 1, nIter do
 
     local function feval(s)
-      local idx = sampler:narrow(1, (epoch-1) * batchsz, batchsz)
-      local x = data.trainX(idx):cuda()
-      local y = data.trainY(idx):cuda()
+      local idx = sampler:narrow(1, (epoch-1)*batchsz+1, batchsz)
+      local x = data:TrainX(idx)
+      local y = data:TrainY(idx)
+    
       return model:updateGrad(x, y)
     end
     

@@ -21,8 +21,8 @@ function getTrainOpts(nTrain)
 
   local lrs = getLR(optLR)
 
-  local period  = 100
-  local batchsz = 128
+ -- local period  = 100
+  local batchsz = 512
   local nIter   = math.floor(nTrain / batchsz)
   local sampler = torch.randperm(nIter*batchsz) % nTrain + 1
   local opts = {}
@@ -30,8 +30,10 @@ function getTrainOpts(nTrain)
   for i=1, utils.nElement(lrs) do 
 
     opts[i]={
-      batchsz=batachsz, period = period, nIter=nIter, 
-      sgdOpt={learningRate=lrs[i]}, 
+      batchsz=batchsz, 
+     -- period = period, 
+      nIter=nIter, 
+      sgd={learningRate=lrs[i]}, 
       sampler = sampler, 
       key=string.format('%e', lrs[i])
     }

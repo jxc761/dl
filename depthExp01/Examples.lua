@@ -109,4 +109,14 @@ function Examples:save(filename)
   fexp:close()
 end
 
+function Examples:__tostring()
+  local t={}
+  t[1] = string.format('nExpSmp=%d', self.samples.X:size(1))
+  t[#t+1] = string.format('nExpTrc=%d', self.traces.X:size(1))
+  t[#t+1] = string.format('samples: ')
+  t[#t+1] = table.concat(self.samples.keys, '\r\n')
+  t[#t+1] = 'traces:'
+  t[#t+1] = table.concat(self.traces.keys, '\r\n')
+  return table.concat(t, '\r\n')
 
+end

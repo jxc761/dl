@@ -2,7 +2,7 @@
 require 'torch'
 require 'nn'
 require 'cunn'
-
+require 'cutorch'
 
 local Model=torch.class('Model')
 
@@ -55,18 +55,27 @@ end
 
 
 function Model:updateGrad(x, y)
+  self.gradParams:zero()
+  x = x:cuda()
+  y = y:cuda()
+
   local o   = self.network:forward(x)          -- output of the network   
   local l   = self.criterion:forward(o, y)     -- loss of the model
   local dl  = self.criterion:backward(o, y)    -- d_loss/d_output
+  
   self.network:backward(x, dl)                 -- d_loss/d_parameters and d_loss / d_x
-  return l, gradParams
+  return l, self.gradParams
 end
 
 function Model:predict(x)
+    x = x:cuda()
 	return self.network:forward(x)
 end
 
-function Model:foward(x, y)
+function Model:forward(X, Y)
+  X = X:cuda()
+  Y = Y:cuda()
+
   local step= 1000
   local sum = 0
 

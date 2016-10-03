@@ -1,4 +1,5 @@
 require 'torch'
+require 'cutorch'
 local utils = require 'utils' 
 
 
@@ -51,8 +52,9 @@ function OLSDataset:index(idx, result)
   
   local N = utils.nElement(idx) 
   local sz = torch.LongStorage{N, self.stride, self.C, self.H, self.W}
-  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
-  -- result:cuda()
+  result = result and result:resize(sz) or torch.FloatTensor(sz)
+  --:cuda()
+  result = result:cuda()
  
   for i = 1, N do
     local ii = self:mapping(idx[i])
@@ -71,7 +73,8 @@ function OLSDataset:indexTraces(idx, result)
   local sz = torch.LongStorage{N, self.M, self.stride, self.C, self.H, self.W }
   local m = self.M
   result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
-  
+  result = result:cuda()
+
   for n = 1, N do
     local x = result[n]
     local i = idx[n]
@@ -85,6 +88,8 @@ end
 function OLSDataset:indexTrace(i, result)
   local sz = torch.LongStorage{self.M, self.stride, self.C, self.H, self.W }
   result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+  result = result:cuda()
+
   local ii = torch.linspace((i-1)*m+1, i*m, m):long()
   self:index(ii, result)
   return result
@@ -94,7 +99,8 @@ function OLSDataset:traces(idx, result)
   
   local N  = utils.nElement(idx)
   local sz = torch.LongStorage{N, self.F, self.C, self.H, self.W}
-  result = result and result:resize(sz) or torch.FloatTensor(sz)
+  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+  result = result:cuda()
   
   local org_data =  self.data:view(self.dsz)
   for i=1, N do
@@ -116,6 +122,7 @@ end
 function OLSDataset:trace(i, result)
   local sz = torch.LongStorage{self.F, self.C, self.H, self.W}
   result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+  result = result:cuda()
 
   local org_data =  self.data:view(self.dsz)
   local s, t = utils.ind2sub(i, {self.K, self.L})  

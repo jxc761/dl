@@ -89,7 +89,9 @@ function OLSDataSource:__init(opts)
     X = X:index(1, idx)
     Y = Y:index(1, idx)
   end
-  
+ 
+  X=X:cuda()
+  Y=Y:cuda()
 
   local splitOpt = utils.getfields(opts, {'splitDim', 'nTrain', 'nValid', 'nTest'}) 
   local dsXopt   = utils.getfields(opts.input, {'step', 'stride', 'speed', 'bidirect'})

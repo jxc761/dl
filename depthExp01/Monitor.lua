@@ -5,12 +5,12 @@ require 'paths'
 
 local Monitor = torch.class('Monitor')
 
-function Monitor:__init(model, data, config)
+function Monitor:__init(model, data, examples, config)
   self.model = model
   self.data  = data
+  self.exps  = examples
 
   self.period  = config.period 
-  self.exps    = config.examples
   self.fn_txt  = config.fn_proc_txt
   self.fn_exp  = config.fn_proc_exp
 
@@ -30,7 +30,7 @@ function Monitor:start()
   self.evals     = {}
   self.durations = {}
 
-  self.tic       = sys.tic 
+  self.tic = sys.tic()
 
   if self.fn_txt then
     self.ftxt = assert( io.open(self.fn_txt, 'w'))
@@ -48,22 +48,22 @@ end
 function Monitor:monitor()
 
   self.epoch = self.epoch + 1 
-  if self.epcho % self.period ~=1 then
+  if self.epoch % self.period ~=1 then
     return
   end
 
   local t=#self.evals + 1 
-  self.evals[t]     = model:forward(self.data:validX(), self.data:validY() )
+  self.evals[t]     = self.model:forward(self.data:ValidX(), self.data:ValidY() )
   self.durations[t] = sys.toc(self.tic) -- cur_duration
 
   if self.ftxt then
-    self.ftxt:write( string.format('%16d%16.2f%16.4e\r\n', self.epoch, t, self.durations[t], self.evals[t]) )
+    self.ftxt:write( string.format('%d\t%d\t%.2f\t%e\r\n', self.epoch, t, self.durations[t], self.evals[t]) )
     self.ftxt:flush()
   end
 
   if self.fexp then
     local Y = self.model:predict(self.exps:smpX())
-    self.fexp:writeObject(predictY)
+    self.fexp:writeObject(Y:float())
   end
 
 end 
@@ -74,11 +74,18 @@ function Monitor:stop()
 end
 
 
-
+function Monitor:__tostring()
+    local t={}
+    t[1]=string.format('period=%d', self.period)
+    t[#t+1] = string.format('fn_txt=%s', self.fn_txt)
+    t[#t+1] = string.format('fn_exp=%s', self.fn_exp)
+    return table.concat(t, '\r\n')
+end
+--[[
 function Monitor:report()
   return {evals = self.evals, durations=self.durations, epochs=self.epochs}
 end
-
+]]--
 
 
 

@@ -16,8 +16,7 @@ local function getLR(opt)
 end
 
 
-function getTrainOpts(nTrain)
-  local optLR = {min=1e-3, max=1, n=4, method='log'}
+function getTrainOpts(optLR, nTrain)
 
   local lrs = getLR(optLR)
 

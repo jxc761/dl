@@ -1,0 +1,14 @@
+
+
+inputdir="../../buffer/depthExp01/d01_m01_t01"
+cmd=sprintf("ls -1 %s/process_*.txt", inputdir)
+files=system(cmd)
+
+cmd=sprintf("ls -1 %s/process_*.txt | wc -l", inputdir)
+n=int(system(cmd))
+
+fout=sprintf("%s/process.png", inputdir)
+set term png 
+set output fout
+plot for[i=1:n] word(files, i) using 2:4  with lines 
+set output 

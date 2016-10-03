@@ -23,14 +23,13 @@ local function batch_mse_ds(model, data, dataset)
     e = e + d:pow(2):sum()
   end 
 
-  return math.sqrt(e/n)
+  return e/n
 end
 
 
 
 local function evaluate_on_ds(model, data)
 
-  local batchsz=1200
   local mse = {}
   mse.train =  batch_mse_ds(model, data, 'train')
   mse.test  =  batch_mse_ds(model, data, 'test')
@@ -41,16 +40,16 @@ end
 local function evaluate_on_exps(model, examples)
 
   local predSmpY = model:predict(examples:smpX())
-
   local X = examples:trcX()
-  local Y = examples:trcY()
   local predY = {}
   for i=1, examples.nTrace do 
-    predY[i]= model:predict(X[i])
+    local yy = model:predict(X[i])
+    local sz = yy:size()
+    predY[i]= yy:view(1, sz[1], sz[2])
   end
 
   local predTrcY = utils.concat(1, predY)
-  return predSmpY:float(), predTrcY:float()
+  return predSmpY, predTrcY
 end
 
 function evaluate(model, data, examples)

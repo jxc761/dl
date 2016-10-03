@@ -1,11 +1,8 @@
 require 'torch'
-
-
-
 require 'OLSDataset'
+
 local ols = require 'ols'
 local utils = require 'utils'
-
 local OLSDataSource=torch.class('OLSDataSource')
 
 
@@ -90,8 +87,8 @@ function OLSDataSource:__init(opts)
     Y = Y:index(1, idx)
   end
  
-  X=X:cuda()
-  Y=Y:cuda()
+  -- X=X:cuda()
+  -- Y=Y:cuda()
 
   local splitOpt = utils.getfields(opts, {'splitDim', 'nTrain', 'nValid', 'nTest'}) 
   local dsXopt   = utils.getfields(opts.input, {'step', 'stride', 'speed', 'bidirect'})
@@ -200,9 +197,6 @@ function OLSDataSource:TracesY(idx, set)
   local Y = self.yproc(trace:view(t*m, stride, c, h, w))
   return Y:view(t, m, -1)
 end
-
-
-
 
 function OLSDataSource:traces(idx, set)
   local X = self.dataX[set]:traces(idx)

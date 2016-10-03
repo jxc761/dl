@@ -2,8 +2,9 @@ require 'paths'
 require 'os'
 require 'math'
 require 'torch'
-local utils = {}
 
+
+utils = {}
 
 function utils.project_dir()
   local osname = paths.uname()
@@ -147,7 +148,7 @@ function utils.concat(dim, ...)
   if (type(a[1]) == "table")  then
     a = a[1]
   end
-  
+
   -- remove empty tensor
   for i=#a,1,-1 do
     if a[i]:dim() < dim then

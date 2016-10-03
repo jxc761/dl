@@ -111,7 +111,7 @@ end
 
 function Examples:__tostring()
   local t={}
-  t[1] = string.format('nExpSmp=%d', self.samples.X:size(1))
+  t[1]    = string.format('nExpSmp=%d', self.samples.X:size(1))
   t[#t+1] = string.format('nExpTrc=%d', self.traces.X:size(1))
   t[#t+1] = string.format('samples: ')
   t[#t+1] = table.concat(self.samples.keys, '\r\n')

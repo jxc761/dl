@@ -10,9 +10,14 @@ function Monitor:__init(model, data, examples, config)
   self.data  = data
   self.exps  = examples
 
+  self.validX  = data:ValidX()
+  self.validY  = data:ValidY()
+
+
   self.period  = config.period 
   self.fn_txt  = config.fn_proc_txt
   self.fn_exp  = config.fn_proc_exp
+
 
   -- self:_setExpSmp(config.expSmpIdx)
 
@@ -53,7 +58,7 @@ function Monitor:monitor()
   end
 
   local t=#self.evals + 1 
-  self.evals[t]     = self.model:forward(self.data:ValidX(), self.data:ValidY() )
+  self.evals[t]     = self.model:forward(self.validX, self.validY)
   self.durations[t] = sys.toc(self.tic) -- cur_duration
 
   if self.ftxt then
@@ -63,7 +68,7 @@ function Monitor:monitor()
 
   if self.fexp then
     local Y = self.model:predict(self.exps:smpX())
-    self.fexp:writeObject(Y:float())
+    self.fexp:writeObject(Y)
   end
 
 end 

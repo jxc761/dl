@@ -33,10 +33,6 @@ function run(model, data, examples, trainOpts, root_output)
     local monitor = Monitor(model, data, examples, optMonitor)
     print(monitor)
 
-
-
-
-
     -- train model
     local tic=sys.tic()
     train(model, data, monitor, trainOpts[i])

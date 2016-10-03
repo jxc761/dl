@@ -1,6 +1,8 @@
 
+
 require 'torch'
 require 'nn'
+
 require 'cunn'
 require 'cutorch'
 
@@ -18,6 +20,7 @@ function Model:__init(layers)
   self.network = self:build_network(layers)
   self.criterion = nn.MSECriterion()
   
+
   self.network:cuda()
   self.criterion:cuda()
 
@@ -56,6 +59,7 @@ end
 
 function Model:updateGrad(x, y)
   self.gradParams:zero()
+  
   x = x:cuda()
   y = y:cuda()
 
@@ -67,10 +71,7 @@ function Model:updateGrad(x, y)
   return l, self.gradParams
 end
 
-function Model:predict(x)
-    x = x:cuda()
-	return self.network:forward(x)
-end
+
 
 function Model:forward(X, Y)
   X = X:cuda()
@@ -92,12 +93,20 @@ function Model:forward(X, Y)
   return result
 end
 
+
+function Model:predict(x)
+  --x = x:cuda()
+	return self.network:forward(x)
+end
+
+
 function Model:__tostring()
   local t = {}
   t[1] = self.network:__tostring()
   t[2] = self.criterion:__tostring()
   return table.concat(t, '\r\n')
 end
+
 
 --[[
 

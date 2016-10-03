@@ -1,6 +1,7 @@
 
 require 'torch'
 require 'nn'
+require 'cunn'
 
 
 local Model=torch.class('Model')
@@ -17,11 +18,10 @@ function Model:__init(layers)
   self.network = self:build_network(layers)
   self.criterion = nn.MSECriterion()
   
-  -- self.network:cuda()
-  -- self.criterion:cuda()
+  self.network:cuda()
+  self.criterion:cuda()
 
 end
-
 
 function Model:build_network(layers)
 
@@ -34,20 +34,19 @@ function Model:build_network(layers)
 			local t= torch.Tensor({ly.dimIn, ly.dimOut, ly.kw, ly.kh, ly.dw, ly.dh, ly.pw, ly.ph})
 			print(t)
 			model:add(nn.SpatialConvolutionMM(ly.dimIn, ly.dimOut, ly.kw, ly.kh, ly.dw, ly.dh, ly.pw, ly.ph))
-		else
+		elseif ly.type == 'relu' then
 			model:add(nn.ReLU())
+		else
+			error('Unkown network')
 		end
 	end
 	return model 
 end
 
-
-
 function Model:reset()
 	self.network:reset()
 	self.param, self.gradParams = self.network:getParameters()
 end
-
 
 
 function Model:getParameters()
@@ -56,21 +55,19 @@ end
 
 
 function Model:updateGrad(x, y)
-	local o   = self.network:forward(x)          -- output of the network   
+  local o   = self.network:forward(x)          -- output of the network   
   local l   = self.criterion:forward(o, y)     -- loss of the model
   local dl  = self.criterion:backward(o, y)    -- d_loss/d_output
   self.network:backward(x, dl)                 -- d_loss/d_parameters and d_loss / d_x
   return l, gradParams
 end
 
-
 function Model:predict(x)
 	return self.network:forward(x)
 end
 
-
 function Model:foward(x, y)
-  local step=1000
+  local step= 1000
   local sum = 0
 
   local n = X:size(1)
@@ -84,6 +81,13 @@ function Model:foward(x, y)
   
   local result = sum / n;
   return result
+end
+
+function Model:__tostring()
+  local t = {}
+  t[1] = self.network:__tostring()
+  t[2] = self.criterion:__tostring()
+  return table.concat(t, '\r\n')
 end
 
 --[[

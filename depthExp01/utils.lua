@@ -17,6 +17,18 @@ function utils.project_dir()
   
 end
 
+function utils.buffer_dir()
+  local osname = paths.uname()
+  
+  local path = {
+    Darwin = '/Users/Jing/Dropbox/dev/dl/buffer',
+    Linux  = '/home/jxc761/dl/buffer'
+  }
+   
+  return path[osname]
+  
+end
+
 
 ---
 -- merge t2 to t1
@@ -46,6 +58,19 @@ function utils.getfields(t, fields)
   for i = 1, #fields do
     result[fields[i]] = t[fields[i]]
   end
+  return result
+end
+
+function utils.unpack(t, fields)
+  print(t)
+  print(fields)
+  local result = {}
+  for i = 1, #fields do
+    result[i] = t[fields[i]]
+  end
+  
+  return table.unpack(result)
+
 end
 
 
@@ -98,6 +123,45 @@ function utils.ind2sub(ind, sz)
   return table.unpack(sub)
 end
 
+
+
+function utils.catv(...)
+  local v={}
+  local a={...}
+  local ii=1
+  for i=1, #a do
+    for j=1, utils.nElement(a[i]) do
+      v[ii] = a[i][j]
+      ii=ii+1
+    end
+  end
+  return v
+end
+
+
+
+
+function utils.concat(dim, ...)
+
+  local a = {...}
+  if (type(a[1]) == "table")  then
+    a = a[1]
+  end
+  
+  -- remove empty tensor
+  for i=#a,1,-1 do
+    if a[i]:dim() < dim then
+      table.remove(a, i)
+    end
+  end
+
+  -- initialize 
+  local result = #a and a[1]
+  for i=2,#a do
+    result=torch.cat(result, a[i], dim)  
+  end
+  return result 
+end
 
 
 

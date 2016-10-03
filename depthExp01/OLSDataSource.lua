@@ -1,36 +1,13 @@
 require 'torch'
-require 'OLSDataset'
 
+
+
+require 'OLSDataset'
 local ols = require 'ols'
+local utils = require 'utils'
 
 local OLSDataSource=torch.class('OLSDataSource')
 
-
-
-local function ValidSceneIdx(N)
-  
-  local scene_with_undefined_depth = torch.LongTensor{
-    2, 3, 4, 18, 25, 28, 32, 58, 70, 72, 75, 
-    79, 96, 103, 104, 126, 128, 137, 143, 155, 
-    156, 172, 173, 176, 194, 234, 243, 247, 250, 
-    275, 289, 303, 315, 334, 342, 352, 353, 361, 
-    362, 369, 373, 375, 389, 394, 404, 406, 408, 
-    415, 419, 423, 438, 439, 443, 451, 452, 454, 
-    455, 456, 461, 462, 473, 487, 492, 493, 498
-  }
-  local undefined = scene_with_undefined_depth[scene_with_undefined_depth:le(N)]
-  local mask = torch.ByteTensor(N, 1):fill(1)
-  mask:indexFill(1, undefined, 0)
-  
-  local idx = torch.LongTensor(N, 1)
-  local i = 0
-  idx:apply(function()
-    i = i + 1
-    return i
-  end)
-
-  return idx[mask]
-end
 
 --- 
 -- construct train, valid, and test datasets
@@ -45,9 +22,14 @@ local function splitDataset(data, splitOpt, dataOpt)
   local splitDim = splitOpt.splitDim
   local nTrain = splitOpt.nTrain
   local nValid = splitOpt.nValid
-  local nTest  = splitOpt.nTest and splitOpt.nTest or ( data:size(1)-nTrain-nValid )
+  local nTest  = splitOpt.nTest and splitOpt.nTest or ( data:size(splitDim)-nTrain-nValid )
   
-  
+  print(splitDim)
+  print(nTrain)
+  print(nValid)
+  print(nTest)
+  print(data:size())
+
   local train = data:narrow(splitDim, 1, nTrain)
   local valid = data:narrow(splitDim, nTrain+1, nValid)
   local test  = data:narrow(splitDim, nTrain+nValid+1, nTest)
@@ -56,8 +38,9 @@ local function splitDataset(data, splitOpt, dataOpt)
   local validset = OLSDataset(valid,  dataOpt ) 
   local testset  = OLSDataset(test,   dataOpt ) 
   
-  return {trainset, validset, testset}
+  return trainset, validset, testset
 end
+
 
 
 
@@ -67,8 +50,11 @@ end
 --  
 -- input: 
 -- options = {
---   input =  {dtype, ctype, res, step, stride, speed, bidirect, preprocess={func, dimOut}}
---   target = {dtype, ctype, res, step, stride, speed, bidirect, preprocess={func, dimOut}}
+--   input =  {dtype, ctype, res, step, stride, speed, bidirect}
+--   target = {dtype, ctype, res, step, stride, speed, bidirect}
+--
+--   inputProc= {func=, dimOut=} x = func(s), s[N, stride, c, h, w] 'noramlize|middle|mean'
+--   targetProc={func=, dimOut=} y = func(s),normalize|middle|mean'
 --
 --   splitDim
 --   nTrain
@@ -88,125 +74,139 @@ end
 --   test= {X, Y}
 -- 
 -- }
+
 function OLSDataSource:__init(opts)
   
-  local splitOpt = utils.getfields(opts, {splitDim, nTrain, nValid, nTest}) 
+  local input = opts.input
+  local target = opts.target
   
   local X = ols.LoadDataset(input.dtype, input.ctype, input.res)
   local Y = ols.LoadDataset(target.dtype, target.ctype, target.res)
   
   -- rule out the scenes with undefined depth
-  if opts.bExcludeUndefined then
-    local N = X:size(1)
-    local idx = ValidSceneIdx(N)
-    X = X[idx]
-    Y = Y[idx]
+  if opts.bOnlyValid then
+    local idx = ols.ValidSceneIdx()
+    X = X:index(1, idx)
+    Y = Y:index(1, idx)
   end
+  
 
+  local splitOpt = utils.getfields(opts, {'splitDim', 'nTrain', 'nValid', 'nTest'}) 
+  local dsXopt   = utils.getfields(opts.input, {'step', 'stride', 'speed', 'bidirect'})
+  local dsYopt   = utils.getfields(opts.target, {'step', 'stride', 'speed', 'bidirect'})
 
-  self.trainX, self.validX, self.testX = splitDataset(X, splitOpt, dsXOpt)
-  self.trainY, self.validY, self.testY = splitDataset(Y, splitOpt, dsYOpt)
+  self.trainX, self.validX, self.testX = splitDataset(X, splitOpt, dsXopt)
+  self.trainY, self.validY, self.testY = splitDataset(Y, splitOpt, dsYopt)
   
   self.nTrain = self.trainX.nSample
   self.nValid = self.validX.nSample
-  self.nTest = self.testX.nSample
+  self.nTest  = self.testX.nSample
   self.nTotal = self.nTrain+self.nValid + self.nTest 
 
-  -- self.szx = self.trainX.stride 
+  self.nTrainTrace = self.trainX.nTrace
+  self.nValidTrace = self.validX.nTrace
+  self.nTestTrace  = self.testX.nTrace
+  self.nTrace      = self.nTrainTrace + self.nValidTrace + self.nTestTrace 
 
-  self.yproc = function(data) {
-    data:view(data:size(1). self.yopt.stride, )
+  self.xproc = opts.inputProc.proc
+  self.yproc = opts.targetProc.proc
+  -- self.xproc, self.xszmap = inputProc and getPreproc(inputProc) 
+  -- self.yproc, self.yszmap = targetProc and getPreproc(targetProc) 
+
+  -- self.xsrcsz = self.TrianX.smpsz:clone()
+  -- self.ysrcsz = self.TrainY.smpsz:clone()
+  -- self.xsz = self.xszmap(self.xsrcsz)
+  -- self.ysz = self.yszmap(self.ysrcsz) 
+
+  self.dataX = {
+    train = self.trainX,
+    valid = self.validX,
+    test = self.testX
   }
 
-  
+  self.dataY = {
+    train = self.trainY,
+    valid = self.validY,
+    test = self.testY
+  }
+  self.numbs = {
+    train = self.nTrain,
+    valid = self.nValid,
+    test  = self.nTest
+  }
+
 end
 
 
-function OLSDatasSource:TrainX(idx)
-  idx = idx and idx or torch.range(1, self.nTrain):long()
-  return self.trainX:index(idx)
+
+function OLSDataSource:TrainX(idx)
+  idx = idx or torch.range(1, self.nTrain):long()
+  return self:indexX(idx, 'train')
 end
 
 function OLSDataSource:TrainY(idx)
-  idx = idx and idx or torch.range(1, self.nTrain):long()
-  return self.trainY:index(idx)
+  idx = idx or torch.range(1, self.nTrain):long()
+  return self:indexY(idx, 'train')
 end
 
 function OLSDataSource:ValidX(idx)
-  idx = idx and idx or torch.range(1, self.nValid):long()
-  return self.validX:index(idx)
+  idx = idx or torch.range(1, self.nValid):long()
+  return self:indexX(idx, 'valid')
 end
 
 
 function OLSDataSource:ValidY(idx)
   idx = idx and idx or torch.range(1, self.nValid):long()
-  return self.validY:index(idx)
+  return self:indexY(idx, 'valid')
 end
 
 function OLSDataSource:TestX(idx)
   idx = idx and idx or torch.range(1, self.nTest):long()
-  return self.testX:index(idx)
+  return self:indexX(idx, 'test')
 end
 
 function OLSDataSource:TestY(idx)
   idx = idx and idx or torch.range(1, self.nTest):long()
-  return self.testY:index(idx)
-end
-
-function OLSDataSouce:__ind(idx, sz)
-
-  local N = utils.nElement(idx)
-  local s1, s2, s3=sz[1], sz[1]+sz[2], sz[1]+sz[2]+sz[3]
-  local c1, c2, c3=0
-  local idx1, idx2, idx3 ={}, {}, {}
-
-  for i=1, N do
-    if idx[i] <= s1 then
-      c1 = c1 + 1
-      idx1[c1] = idx[i]
-
-    elseif idx[i] <= s2 then
-      c2 = c2 + 1
-      idx2[c2] = idx[i] - s1
-    elseif idx[i] <= s3 then 
-      c3 = c3+1
-      idx3[c3] = idx[i] - s2
-    else
-      error('the index is out of boundary')
-    end
-  end
-  return idx1, idx2, idx3  
+  return self:indexY(idx, 'test')
 end
 
 
-function OLSDataSource:X(idx)
-  local idx1, idx2, idx3 = self.__ind(idx, {self.nTrain, self.nValid, self.nTest})
-  local X1 = self:TrainX(idx1)
-  local X2 = self:ValidX(idx2)
-  local X3 = self:TestX(idx3)
-  return torch.concat(X1, X2, X3, 1)
-
+function OLSDataSource:indexX(idx, set)
+  return self.xproc(self.dataX[set]:index(idx))
 end
 
-function OLSDataSource:Y(idx)
-  local idx1, idx2, idx3 = self.__ind(idx, {self.nTrain, self.nValid, self.nTest})
-  local X1 = self:TrainY(idx1)
-  local X2 = self:ValidY(idx2)
-  local X3 = self:TestY(idx3)
-  torch.concat(X1, X2, X3, 1)
-
+function OLSDataSource:indexY(idx, set)
+  return self.yproc(self.dataY[set]:index(idx))
 end
 
-function OLSDataSource:TraceX(idx)
+function OLSDataSource:numb(set)
+  return self.numbs[set]
+end
 
+function OLSDataSource:TracesX(idx, set)
+  local trace = self.dataX[set]:indexTraces(idx)
+  local sz =  trace:size()
+  local t, m, stride, c, h, w =sz[1], sz[2], sz[3], sz[4], sz[5], sz[6]
+  local X = self.xproc(trace:view(t*m, stride, c, h, w))
+  return X:view(t, m , -1)
+end
 
+function OLSDataSource:TracesY(idx, set)
+  local trace = self.dataY[set]:indexTraces(idx)
+  local sz =  trace:size()
+  local t, m, stride, c, h, w =sz[1], sz[2], sz[3], sz[4], sz[5], sz[6]
+  local Y = self.yproc(trace:view(t*m, stride, c, h, w))
+  return Y:view(t, m, -1)
 end
 
 
-function OLSDatasource:TraceY(idx)
 
+
+function OLSDataSource:traces(idx, set)
+  local X = self.dataX[set]:traces(idx)
+  local Y = self.dataY[set]:traces(idx)
+  return X, Y
 end
-
 
 function OLSDataSource:__tostring()
   local t = {}

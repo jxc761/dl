@@ -13,11 +13,11 @@ function OLSDataset:__init(data, options)
 
   local dsz = data:size()
   self.dsz = dsz
-  self.S, self.T, self.F, self.C, self.W, self.H = dsz[1], dsz[2], dsz[3], dsz[4], dsz[5], dsz[6]
+  self.S, self.T, self.F, self.C, self.H, self.W = dsz[1], dsz[2], dsz[3], dsz[4], dsz[5], dsz[6]
 
   local n = self.S * self.T * self.F 
   local d = self.C * self.W * self.H 
-  self.data = data:view(n, d)
+  self.data = data:view(n, self.C, self.H, self.W)
  
 
 
@@ -35,41 +35,42 @@ function OLSDataset:__init(data, options)
   self.M = math.floor( (self.F - 1 - (self.stride-1)*self.speed + self.step ) / self.step )
 
   -- public
-  self.nScene = self.K 
-  self.nTrace = self.K * self.L
+  self.nScene  = self.K 
+  self.nTrace  = self.K * self.L
   self.nSample = self.K * self.L * self.M
 
-  self.smp  = {self.stride, self.}
-
+  self.smpsz = torch.LongStorage({self.stride, self.C, self.H, self.W})
+  self.frmsz = torch.LongStorage({self.C, self.H, self.W})
 end
 
--- return index
---
+-- return 
+-- N x stride x c x h x w
 -- idx: table/one-dimension tensor
 -- 
 function OLSDataset:index(idx, result)
   
   local N = utils.nElement(idx) 
-  local D = self.dim
- 
-  result = result and result:resize(N, D) or torch.FloatTensor(N, D)
+  local sz = torch.LongStorage{N, self.stride, self.C, self.H, self.W}
+  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+  -- result:cuda()
  
   for i = 1, N do
     local ii = self:mapping(idx[i])
-    local x = result[i]:view(self.stride, -1) 
-     x:index(self.data, 1, ii)
+    result[i]:index(self.data, 1, ii)
   end
   
   return result  
   
 end
 
+-- return 
+-- N x #samples per trace x stride x c x h x w
+-- 
 function OLSDataset:indexTraces(idx, result)
   local N = utils.nElement(idx) -- #idx -- :nElement()
-  local m = self.M 
-  local d = self.dim
- 
-  result = result and result:resize(N, m, d) or torch.FloatTensor(N, m, d)
+  local sz = torch.LongStorage{N, self.M, self.stride, self.C, self.H, self.W }
+  local m = self.M
+  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
   
   for n = 1, N do
     local x = result[n]
@@ -81,36 +82,61 @@ function OLSDataset:indexTraces(idx, result)
   return result
 end
 
+function OLSDataset:indexTrace(i, result)
+  local sz = torch.LongStorage{self.M, self.stride, self.C, self.H, self.W }
+  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+  local ii = torch.linspace((i-1)*m+1, i*m, m):long()
+  self:index(ii, result)
+  return result
+end
 
 function OLSDataset:traces(idx, result)
-
-  local N = utils.nElement(idx)
-  local sz = torch.LongStorage({N, self.F, self.C, self.W})
+  
+  local N  = utils.nElement(idx)
+  local sz = torch.LongStorage{N, self.F, self.C, self.H, self.W}
   result = result and result:resize(sz) or torch.FloatTensor(sz)
-
-
+  
   local org_data =  self.data:view(self.dsz)
-  for n=1, N do
-    local s, t = utils.ind2sub(idx[i], {self.K, self.L}) 
-    
-
+  for i=1, N do
+    local s, t = utils.ind2sub(idx[i], {self.K, self.L})  
     if t <= self.T then
       result[i]:copy(org_data[s][t])
     else
       t = t - self.T 
       local trace = org_data[s][t]
       local selected = torch.range(self.F, 1, -1):long()
-      result[i]:index(org_data, selected)
+      result[i]:index(trace, 1, selected)
     end
   end
 
+  return result
+
+end
+
+function OLSDataset:trace(i, result)
+  local sz = torch.LongStorage{self.F, self.C, self.H, self.W}
+  result = result and result:resize(sz) or torch.FloatTensor(sz)--:cuda()
+
+  local org_data =  self.data:view(self.dsz)
+  local s, t = utils.ind2sub(i, {self.K, self.L})  
+  if t <= self.T then
+    result:copy(org_data[s][t])
+  else
+    t = t - self.T 
+    local trace = org_data[s][t]
+    local selected = torch.range(self.F, 1, -1):long()
+    result:index(trace, 1, selected)
+  end
+
+  return result
 
 end
 
 
+
 function OLSDataset:mapping(i)
-  local sub = utils.ind2sub(i, {self.K, self.L, self.M} )
-  local k, l, m = sub[1], sub[2], sub[3]
+
+  local k, l, m = utils.ind2sub(i, {self.K, self.L, self.M} )
 
   local first, last = nil, nil
   if l <= self.T then 
@@ -142,11 +168,9 @@ function OLSDataset:__tostring()
 
 
 
-  t[#t+1] = string.format('#scenes=%d', self.K)
-  t[#t+1] = string.format('#trace per scene=%d', self.L)
-  t[#t+1] = string.format('#sample per trace=%d', self.M)
-  t[#t+1] = string.format('(S, T, F, C, W, H) = (%d, %d, %d, %d, %d, %d)', 
-  self.S, self.T, self.F, self.C, self.W, self.H)
+  t[#t+1] = string.format('(K, L, M) = (%d, %d, %d)', self.K, self.L, self.M)
+  t[#t+1] = string.format('(S, T, F) = (%d, %d, %d)', self.S, self.T, self.F)
+  t[#t+1] = string.format('(C, H, W) = (%d, %d, %d)', self.C, self.H, self.W)
 
   return table.concat(t, '\r\n')
 

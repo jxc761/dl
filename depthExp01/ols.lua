@@ -18,7 +18,7 @@ end
 
 local function DatasetFilename(dtype, ctype, res)
   
-  local key = string.format('%s_%s_%dx%d',dtype, ctype, res, res)
+  local key = string.format('%s_%s_%dx%d', dtype, ctype, res, res)
   
   
   local cachedir = CacheDir()
@@ -48,9 +48,9 @@ local function DatasetSize(dtype, ctype, res)
       flow_ra_16x16       = {500, 40, 29, 2, 16, 16},
       flow_ra_32x32       = {500, 40, 29, 2, 32, 32}
   }
-  
+  --[[
   local osname = paths.uname()
-  if osname== 'Darwin' then
+  if osname == 'Darwin' then
     sztable = { 
       image_gray_16x16    = {50, 40, 30, 1, 16, 16}, 
       image_gray_32x32    = {50, 40, 30, 1, 32, 32},
@@ -66,6 +66,7 @@ local function DatasetSize(dtype, ctype, res)
       flow_ra_32x32       = {50, 40, 29, 2, 32, 32}
     }
   end
+  --]]
   return sztable[key]
   
 end
@@ -107,14 +108,33 @@ local function LoadDataset (dtype, ctype, res)
   return data
 end
 
+local function ValidSceneIdx()
+  local N = 500
+
+  local scene_with_undefined_depth = torch.LongTensor{
+    3,4,5,19,26,29,33,59,71,73,76,80,97,104,105,127,129,
+    138,144,156,157,173,174,177,195,235,244,248,251,276,
+    290,304,316,335,343,353,354,362,363,370,374,376,390,
+    395,405,407,409,416,420,424,439,440,444,452,453,455,
+    456,457,462,463,474,488,493,494,499
+  }
+
+  local undefined = scene_with_undefined_depth[scene_with_undefined_depth:le(N)]
+  local mask = torch.ByteTensor(N, 1):fill(1)
+  mask:indexFill(1, undefined, 0)
+  
+  local idx = torch.range(1, N):long()
+  return idx[mask]
+end
 
 local ols = {
   CacheDir  = CacheDir,
   DatasetSize = DatasetSize,
   DatasetFilename = DatasetFilename,
-  LoadDataset = LoadDataset
+  LoadDataset = LoadDataset,
+  ValidSceneIdx = ValidSceneIdx
 }
- 
+
 
 return ols
 

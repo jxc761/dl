@@ -7,15 +7,14 @@
 set -o nounset
 set -o errexit
 
-# parse arguments
-IDX=$(seq 1 10)
-if [ "$#" -gt 0 ]; then
-	IDX=($@)  #"$@"
-fi
-
-
 SCRIPT="${HOME}/dl/script/run.sh"
-for i in "${IDX[@]}"; do
-	JOBNAME="depthExp01_runexp01_$i"
-	${SCRIPT} "${JOBNAME}" "depthExp01" "exp.lua conf01.lua $i" "gpu"
-done
+
+JOBNAME="depthExp01_d01_m01_tr01"
+${SCRIPT} "${JOBNAME}" "depthExp01" "exp01.lua" "gpu"
+
+
+# parse arguments
+# IDX=$(seq 1 10)
+# if [ "$#" -gt 0 ]; then
+#	IDX=($@)  #"$@"
+# fi

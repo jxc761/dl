@@ -1,45 +1,38 @@
+require 'paths'
+require 'image'
+require '../utils'
 
 
-local function visualize_process(filename, Y, cb)
-  local YY = load_proc(filename)
-  local T = #YY
+function load_process(filename)
+  local result={}
+  local f = torch.DiskFile(filename, "r"):binary()
+  f:quiet()
+  while not f:hasError() do
+    result[#result+1] =  f:readObject()
+  end
+  f:close()
+  return utils.concat(0, result)
+end
 
-  -- for histc 
-  local min, max = minmax(YY)
-  local nbins = 20
-  local bw = (max-min)/bins 
-  local centers = torch.linespace(min+0.5*bw, max-0.5*bw, nbins)
-  
+
+local root   = '/Users/Jing/Dropbox/dev/dl/buffer/depthExp01/d01_m01_t02'
+local fn_proc= string.format('%s/process_1.dat', root)
+local result = load_process(fn_process)
+
+local T=result:size(1)
+local N=result:size(2) 
+local min=result:min()
+local max=result:max()
+for i=1,N do
+  local output = string.format('%s/process1_smp%d', root_output, i)
+  paths.mkdir(output)
+  local Y = result:narrow(2, i, 1)
+  local min = Y:min()
+  local max = Y:max()
   for t=1,T do
-    local et = Y[t] - Y
-    local abs = torch.abs(et)
-    local hist = torch.histc(et, nbins, min, max)
-    
-    local fn_pred_img, fn_err_img, fn_hist_txt = cb(t)
-    imsave(fn_pred_img, Y[t])
-    imsave(fn_err_img, abs)
-    imsave(fn_hist_txt, centers, hist)
+    local im = image.minmax({tensor=result[t], min=min, max=max})
+    local fn = string.format('%s/predict_%d.png', output, t)
+    image.save(fn, im)
   end
 
 end
-
-
-function loadResult(filename)
-  local f=torch.DiskFile(filename, "r"):binary()
-  local smp = f:readObject()
-  local trc = f:readObject()
-  f:close()
-  print(smp:size())
-  print(trc:size())
-end
-
-local inputdir="../../buffer/depthExp01/d01_m01_t01"
-local filename=inputdir .. "/examples.dat"
-local f=torch.DiskFile(filename, "r"):binary()
-smp=f:readObject()
-trc=f:readObject()
-f:close()
-
-filename=inputdir .. "/result_4.dat"
-
-

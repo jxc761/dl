@@ -143,24 +143,34 @@ end
 
 
 function utils.concat(dim, ...)
-
   local a = {...}
   if (type(a[1]) == "table")  then
-    a = a[1]
+    a = { table.unpack(a[1]) }
   end
 
+  -- expand one dim
+  if dim==0 then
+    for i=1, #a do
+      local oldsz = a[i]:size()
+      local newsz = utils.catv({1}, oldsz)
+      a[i] = a[i]:view(torch.LongStorage(newsz))
+    end
+    dim = 1
+  end
+  
   -- remove empty tensor
   for i=#a,1,-1 do
     if a[i]:dim() < dim then
       table.remove(a, i)
     end
   end
-
+  
   -- initialize 
   local result = #a and a[1]
   for i=2,#a do
     result=torch.cat(result, a[i], dim)  
   end
+  
   return result 
 end
 

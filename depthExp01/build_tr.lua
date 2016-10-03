@@ -10,7 +10,7 @@ local function getLR(opt)
   if method == 'log' then
     learningrates = torch.logspace(math.log10(min), math.log10(max), n)
   else
-    learningrates = torch.linespace(min, max, n)
+    learningrates = torch.linspace(min, max, n)
   end
   return learningrates
 end

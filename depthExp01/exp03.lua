@@ -16,7 +16,7 @@ local data        = build_ds()
 local model       = build_md()
 local examples    = Examples(data)
 local trainOpts   = getTrainOpts({min=1, max=10, n=4, method='linear'}, data.nTrain)
-local root_output = string.format('%s/depthExp01/d01_m01_t02', utils.buffer_dir())
+local root_output = string.format('%s/depthExp01/d01_m01_t03', utils.buffer_dir())
 
 paths.mkdir(root_output)
 

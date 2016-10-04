@@ -19,8 +19,7 @@ end
 local function getTracesFromDataset(data, dataset, idx)
 	local X = data:TracesX(idx, dataset)
 	local Y = data:TracesY(idx, dataset)
-	local xtrace = data:traces(idx, dataset)
-	local ytrace = data:traces(idx, dataset)
+	local xtrace, ytrace = data:traces(idx, dataset)
 
 	local keys = {} 
 	for i=1, #idx do
@@ -104,7 +103,7 @@ end
 
 function Examples:save(filename)
   local fexp = torch.DiskFile(filename, 'w'):binary()
-  fexp:writeObject(self.examples)
+  fexp:writeObject(self.samples)
   fexp:writeObject(self.traces)
   fexp:close()
 end

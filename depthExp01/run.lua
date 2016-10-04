@@ -8,14 +8,13 @@ local utils=require'utils'
 
 
 function run(model, data, examples, trainOpts, root_output)
+  local fn_examples= string.format('%s/examples.dat', root_output)
+  examples:save(fn_examples)
 
   local fn_perform = string.format('%s/perform.txt', root_output)
-  local fn_examples= string.format('%s/examples.dat', root_output)
-  
   local fperform = assert( io.open(fn_perform, 'w'))
   fperform:write(string.format('%s\t%s\t%s\t%s\t%s\r\n', 'opts', 'duration', 'train','valid', 'test'))
 
-  examples:save(fn_examples)
   
   for i=1, #trainOpts do
 
